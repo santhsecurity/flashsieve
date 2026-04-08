@@ -1,0 +1,64 @@
+[package]
+name = "flashsieve"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+description = "Storage-level pre-filtering for pattern matching — skip blocks that can't contain matches"
+keywords = ["filter", "bloom", "storage", "pattern-matching", "indexing"]
+categories = ["algorithms", "data-structures"]
+repository = "https://github.com/santhsecurity/Santh"
+homepage = "https://github.com/santht/flashsieve"
+documentation = "https://docs.rs/flashsieve"
+readme = "README.md"
+authors = ["Corum Collective LLC <contact@santh.io>"]
+include = [
+    "src/**/*.rs",
+    "tests/**/*.rs",
+    "benches/**/*.rs",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+thiserror = "2"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+rand = "0.8"
+proptest = "1.6"
+tempfile = "3.10"
+
+[[bench]]
+name = "filter_throughput"
+harness = false
+
+[[bench]]
+name = "legendary_bench"
+harness = false
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+todo = "deny"
+unimplemented = "deny"
+panic = "deny"
+missing_errors_doc = "allow"
+cast_possible_truncation = "allow"
+pedantic = { level = "warn", priority = -1 }
+
+[[test]]
+name="scale_suite"
+path="tests/scale_suite.rs"
+
+
+[[test]]
+name="property_suite"
+path="tests/property_suite.rs"
+
