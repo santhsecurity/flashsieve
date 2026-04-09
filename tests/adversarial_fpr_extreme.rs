@@ -4,13 +4,8 @@
 //! false positive rate values without panicking or producing invalid results.
 
 #![allow(
-    clippy::cast_lossless,
-    clippy::doc_markdown,
     clippy::expect_used,
-    clippy::manual_range_contains,
-    clippy::single_match_else,
     clippy::uninlined_format_args,
-    clippy::unreadable_literal,
     clippy::unwrap_used
 )]
 
@@ -162,7 +157,7 @@ fn fpr_consistency() {
 /// Tests with_target_fpr with various expected item counts.
 #[test]
 fn fpr_various_expected_items() {
-    for &expected_items in &[1, 10, 100, 1000, 10_000, 100_000] {
+    for &expected_items in &[1, 10, 100, 1000, 10000, 100000] {
         let result = NgramBloom::with_target_fpr(0.01, expected_items);
         assert!(
             result.is_ok(),

@@ -1,11 +1,4 @@
-#![allow(
-    clippy::doc_markdown,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::redundant_closure_for_method_calls,
-    clippy::uninlined_format_args,
-    clippy::unwrap_used
-)]
+#![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 //! CRITICAL: Zero false negative tests.
 //!
 //! A false negative in flashsieve means silently skipping a file that
@@ -110,7 +103,7 @@ fn single_occurrence_in_random_data_never_missed() {
     assert!(
         candidates
             .iter()
-            .any(|r| r.offset <= placement_offset && r.offset + r.length > placement_offset),
+            .any(|r| r.offset / block_size == target_block),
         "pattern placed in block {target_block} was not found in candidates"
     );
 }

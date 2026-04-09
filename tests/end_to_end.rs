@@ -29,25 +29,11 @@ fn end_to_end_filtering() {
     let ngram_filter = NgramFilter::from_patterns(&patterns);
     let candidates = index.candidate_blocks(&byte_filter, &ngram_filter);
 
-    // ZERO FALSE NEGATIVES: every block containing a planted pattern MUST be a candidate.
-    // This is the foundational correctness guarantee of the elimination pipeline.
-    for (pattern, offset) in patterns.iter().zip(offsets) {
-        let planted_block_start = (offset / block_size) * block_size;
-        let found = candidates.iter().any(|range| {
-            planted_block_start >= range.offset && planted_block_start < range.offset + range.length
-        });
-        assert!(
-            found,
-            "BLOOM FALSE NEGATIVE: pattern {:?} at offset {} (block starting at {}) \
-             is NOT in candidate list {:?}. This violates the zero false negative guarantee.",
-            std::str::from_utf8(pattern).unwrap_or("<binary>"),
-            offset,
-            planted_block_start,
-            candidates
-                .iter()
-                .map(|c| (c.offset, c.length))
-                .collect::<Vec<_>>()
-        );
+    for offset in offsets {
+        let planted_block = offset / block_size;
+        assert!(candidates
+            .iter()
+            .any(|range| range.offset / block_size == planted_block));
     }
 
     assert!(index.selectivity(&candidates) < 0.5);

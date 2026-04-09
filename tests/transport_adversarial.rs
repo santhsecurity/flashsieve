@@ -3,12 +3,10 @@
 //! These tests are designed to break the implementation: pathological inputs,
 //! exhaustive truncation, concurrent races, and CRC collision resistance.
 
-#![allow(clippy::unwrap_used)]
-
-use flashsieve::incremental_watch::{IncrementalWatch, WatchConfig};
 use flashsieve::transport::{
     from_transport_bytes, rle_compress, rle_decompress, to_transport_bytes,
 };
+use flashsieve::incremental_watch::{IncrementalWatch, WatchConfig};
 use flashsieve::{BlockIndex, BlockIndexBuilder, ByteHistogram, NgramBloom};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -49,26 +47,21 @@ fn transport_round_trip_maximum_size_index() {
 /// and that the compressed payload is at least 1.5x the raw data.
 #[test]
 fn rle_pathological_alternating_ff_00() {
-    let data: Vec<u8> = (0..10_000)
-        .map(|i| if i % 2 == 0 { 0xFF } else { 0x00 })
-        .collect();
+    let data: Vec<u8> = (0..10_000).map(|i| if i % 2 == 0 { 0xFF } else { 0x00 }).collect();
 
     let compressed = rle_compress(&data);
     let decompressed = rle_decompress(&compressed, data.len()).unwrap();
 
     // Exact round-trip is mandatory
-    assert_eq!(
-        data, decompressed,
-        "RLE round-trip corrupted pathological data"
-    );
+    assert_eq!(data, decompressed, "RLE round-trip corrupted pathological data");
 
     // Pathological input must expand: each 0xFF turns into a 4-byte escape
     // and each 0x00 is a 1-byte literal. Expected expansion factor is ~2.5x.
     assert!(
         compressed.len() >= data.len() + (data.len() / 2) * 3,
-        "pathological RLE did not expand as expected: compressed={compressed_len} raw={data_len}",
-        compressed_len = compressed.len(),
-        data_len = data.len()
+        "pathological RLE did not expand as expected: compressed={} raw={}",
+        compressed.len(),
+        data.len()
     );
 }
 
@@ -90,8 +83,9 @@ fn truncated_transport_data_at_every_offset() {
         let result = from_transport_bytes(&transport[..len]);
         assert!(
             result.is_err(),
-            "truncation at offset {len} (of {total}) must fail",
-            total = transport.len()
+            "truncation at offset {} (of {}) must fail",
+            len,
+            transport.len()
         );
     }
 }
@@ -201,7 +195,9 @@ fn crc32_collision_resistance_flip_every_bit() {
             let result = from_transport_bytes(&corrupted);
             assert!(
                 result.is_err(),
-                "CRC32 missed collision: byte {byte_idx} bit {bit} produced Ok"
+                "CRC32 missed collision: byte {} bit {} produced Ok",
+                byte_idx,
+                bit
             );
         }
     }

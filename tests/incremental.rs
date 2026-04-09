@@ -71,29 +71,26 @@ fn merge_matches_full_rebuild() {
 
 #[test]
 fn remove_blocks_requeries_on_compacted_offsets() {
-    // Only suffix blocks can be removed (API constraint: NonSuffixBlockRemoval).
-    // Build 4 blocks, remove the last 2 (suffix), verify the first 2 remain queryable.
     let blocks = vec![
         patterned_block(b'a', b"keep-0"),
-        patterned_block(b'b', b"keep-1"),
-        patterned_block(b'c', b"drop-2"),
+        patterned_block(b'b', b"drop-1"),
+        patterned_block(b'c', b"keep-2"),
         patterned_block(b'd', b"drop-3"),
     ];
 
     let mut index = build_index(&blocks).unwrap();
-    // Remove suffix blocks (last 2)
-    index.remove_blocks(&[2, 3]).unwrap();
+    index.remove_blocks(&[1, 3]).unwrap();
 
     assert_eq!(index.block_count(), 2);
     assert_eq!(index.total_data_length(), BLOCK_SIZE * 2);
 
-    let keep_filter = ByteFilter::from_patterns(&[b"keep-1".as_slice()]);
+    let keep_filter = ByteFilter::from_patterns(&[b"keep-2".as_slice()]);
     let keep_candidates = index.candidate_blocks_byte(&keep_filter);
     assert_eq!(keep_candidates.len(), 1);
     assert_eq!(keep_candidates[0].offset, BLOCK_SIZE);
     assert_eq!(keep_candidates[0].length, BLOCK_SIZE);
 
-    let dropped_filter = ByteFilter::from_patterns(&[b"drop-2".as_slice()]);
+    let dropped_filter = ByteFilter::from_patterns(&[b"drop-1".as_slice()]);
     assert!(index.candidate_blocks_byte(&dropped_filter).is_empty());
 }
 
@@ -125,8 +122,7 @@ fn serialization_roundtrip_after_incremental_updates() {
         patterned_block(b'g', b"remove-2"),
     ])
     .unwrap();
-    // Only suffix blocks can be removed — remove the last block (index 2).
-    removed.remove_blocks(&[2]).unwrap();
+    removed.remove_blocks(&[1]).unwrap();
 
     let removed_roundtrip = BlockIndex::from_bytes_checked(&removed.to_bytes()).unwrap();
     assert_eq!(removed_roundtrip.to_bytes(), removed.to_bytes());

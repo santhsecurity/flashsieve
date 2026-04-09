@@ -1,10 +1,3 @@
-#![allow(
-    clippy::cast_precision_loss,
-    clippy::panic,
-    clippy::uninlined_format_args,
-    clippy::unwrap_used
-)]
-
 use flashsieve::NgramBloom;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -76,14 +69,12 @@ fn exact_pair_table_eliminates_all_false_positives() {
         for b in 0_u8..=255 {
             let was_inserted = inserted.contains(&(a, b));
             let contains = bloom.maybe_contains(a, b);
-            assert!(
-                was_inserted || !contains,
-                "false positive for ({a}, {b}) with exact-pair table"
-            );
-            assert!(
-                !was_inserted || contains,
-                "false negative for ({a}, {b}) — exact-pair table broken"
-            );
+            if !was_inserted && contains {
+                panic!("false positive for ({a}, {b}) with exact-pair table");
+            }
+            if was_inserted && !contains {
+                panic!("false negative for ({a}, {b}) — exact-pair table broken");
+            }
         }
     }
 }
@@ -122,7 +113,8 @@ fn larger_filters_reduce_fpr_monotonically() {
     for window in fprs.windows(2) {
         assert!(
             window[1] <= window[0] * 1.5,
-            "FPR did not decrease monotonically: {fprs:?}"
+            "FPR did not decrease monotonically: {:?}",
+            fprs
         );
     }
 }

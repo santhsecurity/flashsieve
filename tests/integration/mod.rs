@@ -27,9 +27,7 @@ fn test_end_to_end_workflow() {
 
     // 3. Incrementally add a new block
     let new_data = vec![0xCD; 1024];
-    let new_serialized =
-        IncrementalBuilder::append_blocks_with_boundary(&serialized, Some(0xAB), &[&new_data])
-            .unwrap();
+    let new_serialized = IncrementalBuilder::append_blocks(&serialized, &[&new_data]).unwrap();
 
     // 4. Overwrite file with new index
     let mut file2 = NamedTempFile::new().unwrap();
@@ -44,16 +42,7 @@ fn test_end_to_end_workflow() {
         &NgramFilter::from_patterns(&[b"\xCD\xCD"]),
     );
 
-    // The match MUST include the last block (block 2) — zero false negatives guarantee.
-    // Bloom filters may also return false positives (other blocks), so we check >= 1.
-    assert!(
-        !candidates.is_empty(),
-        "candidate_blocks must find the block containing the pattern"
-    );
-    assert!(
-        candidates
-            .iter()
-            .any(|c| c.offset <= 2048 && c.offset + c.length > 2048),
-        "block at offset 2048 must be covered by candidates. Got: {candidates:?}"
-    );
+    // The match should be in the last block (block 2)
+    assert_eq!(candidates.len(), 1);
+    assert_eq!(candidates[0].offset, 2048);
 }
