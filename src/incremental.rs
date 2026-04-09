@@ -109,7 +109,6 @@ impl IncrementalBuilder {
         for &block in blocks {
             index.append_block_with_boundary(block, prev_last_byte)?;
             prev_last_byte = block.last().copied();
-            eprintln!("DEBUG after append: total_len={}", index.total_len);
         }
         Ok(index.to_bytes())
     }
@@ -157,22 +156,8 @@ impl BlockIndex {
         }
 
         let bloom_bits = self.bloom_bits()?;
-        eprintln!("DEBUG append_block_with_boundary: bloom_bits={bloom_bits}");
         self.histograms.push(ByteHistogram::from_block(block_data));
         let mut bloom = NgramBloom::from_block(block_data, bloom_bits)?;
-        eprintln!(
-            "DEBUG bloom built: maybe_contains_CD_CD={}",
-            bloom.maybe_contains(0xCD, 0xCD)
-        );
-        eprintln!(
-            "DEBUG bloom bits ones={}",
-            bloom
-                .raw_parts()
-                .1
-                .iter()
-                .map(|w| w.count_ones())
-                .sum::<u32>()
-        );
         if let Some(prev_byte) = prev_last_byte {
             if let Some(&first) = block_data.first() {
                 bloom.insert_ngram(prev_byte, first);

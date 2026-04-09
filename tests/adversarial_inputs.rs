@@ -1,5 +1,3 @@
-#![allow(clippy::unwrap_used)]
-
 use flashsieve::{BlockIndexBuilder, ByteFilter, NgramBloom, NgramFilter};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -50,14 +48,10 @@ fn patterns_at_exact_block_boundaries() {
 
     for &offset in &[offset1, offset2] {
         let expected_start = (offset / block_size) * block_size;
-        let found = candidates
-            .iter()
-            .any(|r| expected_start >= r.offset && expected_start < r.offset + r.length);
-        eprintln!(
-            "offset={offset} expected_start={expected_start} candidates={candidates:?} found={found}"
-        );
         assert!(
-            found,
+            candidates.iter().any(|r| {
+                expected_start >= r.offset && expected_start < r.offset + r.length
+            }),
             "pattern at offset {offset} not found in candidates {candidates:?}"
         );
     }
@@ -121,7 +115,12 @@ fn collision_resistance_shared_byte_set() {
         .unwrap();
 
     // All patterns use the exact same bytes, but only one is present
-    let patterns: Vec<&[u8]> = vec![b"abcde", b"edcba", b"aebcd", b"badce"];
+    let patterns: Vec<&[u8]> = vec![
+        b"abcde",
+        b"edcba",
+        b"aebcd",
+        b"badce",
+    ];
 
     let bf = ByteFilter::from_patterns(&patterns);
     let nf = NgramFilter::from_patterns(&patterns);

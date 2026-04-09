@@ -57,7 +57,7 @@ proptest! {
         let builder = BlockIndexBuilder::new().block_size(256).bloom_bits(1024);
         let contiguous_index = builder.build(&padded).unwrap();
 
-        let chunks: Vec<Vec<u8>> = padded.chunks(256).map(<[u8]>::to_vec).collect();
+        let chunks: Vec<Vec<u8>> = padded.chunks(256).map(|c| c.to_vec()).collect();
         let streaming_index = builder.build_streaming(chunks.into_iter()).unwrap();
 
         assert_eq!(contiguous_index.to_bytes(), streaming_index.to_bytes());

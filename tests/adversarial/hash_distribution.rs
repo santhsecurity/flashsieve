@@ -1,12 +1,4 @@
-#![allow(
-    clippy::cast_lossless,
-    clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::unreadable_literal,
-    clippy::unwrap_used
-)]
+#![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 //! CRITICAL: Hash function distribution tests.
 //!
 //! The bloom filter's false negative rate depends on uniform hash distribution.
@@ -72,7 +64,7 @@ fn hash_uniformity_fill_ratio() {
     // Insert 10K random pairs
     let mut rng = 0x1234_5678_9ABC_DEF0_u64;
     let mut next_rng = || {
-        rng = rng.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+        rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1);
         rng
     };
 
@@ -335,7 +327,7 @@ fn exact_pairs_zero_fpr() {
     // Insert random subset of pairs
     let mut rng = 0xDEAD_BEEF_u64;
     let mut next_rng = || {
-        rng = rng.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+        rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1);
         rng
     };
 

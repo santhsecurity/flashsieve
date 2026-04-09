@@ -78,14 +78,14 @@ fn legendary_unit_composite_filter_and() {
     assert!(filter.matches(&hist_match, &bloom_match));
 
     let hist_miss = ByteHistogram::from_block(b"a_");
-    let bloom_miss = flashsieve::NgramBloom::from_block(b"a_", 1024).unwrap();
+    let _bloom_miss = flashsieve::NgramBloom::from_block(b"a_", 1024).unwrap();
 
     // Wait, the filter is: Byte(a) AND Ngram(ab).
     // The hist_miss is "a_". Does it match Byte(a)? Yes, it has 'a'.
     // The bloom is `bloom_match` which is "ab". Does it match Ngram(ab)? Yes, it has "ab".
     // So filter.matches(&hist_miss, &bloom_match) returns TRUE because BOTH are true!
     // We want to test that it fails if ONE of them fails. Let's pass a failing bloom filter!
-    assert!(!filter.matches(&hist_miss, &bloom_miss));
+    assert!(!filter.matches(&hist_miss, &_bloom_miss));
 }
 
 #[test]

@@ -1,7 +1,7 @@
-//! Adversarial tests for `exact-pairs` at block boundaries — Jules missed these.
+//! Adversarial tests for exact-pairs at block boundaries — Jules missed these.
 //!
 //! These tests verify that patterns at block boundaries are correctly found
-//! when `exact-pairs` is enabled (`num_bits >= EXACT_PAIR_THRESHOLD_BITS`).
+//! when exact-pairs is enabled (num_bits >= EXACT_PAIR_THRESHOLD_BITS).
 
 #![allow(
     clippy::expect_used,
@@ -13,7 +13,7 @@ use flashsieve::{BlockIndexBuilder, ByteFilter, MmapBlockIndex, NgramBloom, Ngra
 
 const EXACT_PAIR_THRESHOLD_BITS: usize = 4096;
 
-/// CRITICAL: Verifies that `exact-pairs` bloom filters correctly handle patterns
+/// CRITICAL: Verifies that exact-pairs bloom filters correctly handle patterns
 /// at block boundaries. A false negative here means data loss at scale.
 #[test]
 fn exact_pairs_pattern_at_block_boundary_found() {
@@ -72,8 +72,8 @@ fn exact_pairs_cross_boundary_ngram_found() {
     );
 }
 
-/// Verifies that `exact_pairs` produces ZERO false positives for 2-byte pairs.
-/// With `exact_pairs` enabled, `maybe_contains_exact` should be exact (no FPR).
+/// Verifies that exact_pairs produces ZERO false positives for 2-byte pairs.
+/// With exact_pairs enabled, maybe_contains_exact should be exact (no FPR).
 #[test]
 fn exact_pairs_zero_false_positives_for_pairs() {
     // Use minimum size for exact_pairs
@@ -121,7 +121,7 @@ fn exact_pairs_zero_false_positives_for_pairs() {
     );
 }
 
-/// Tests paired byte + ngram filter at block boundaries with `exact-pairs`.
+/// Tests paired byte + ngram filter at block boundaries with exact-pairs.
 #[test]
 fn exact_pairs_paired_filter_at_boundary() {
     let block_size = 256;
@@ -146,8 +146,8 @@ fn exact_pairs_paired_filter_at_boundary() {
     );
 }
 
-/// FINDING 1 DEMONSTRATION: `MmapBlockIndex` never reports `exact_pairs` availability.
-/// This test documents the bug where `MmapBlockIndex` always uses bloom-only path.
+/// FINDING 1 DEMONSTRATION: MmapBlockIndex never reports exact_pairs availability.
+/// This test documents the bug where MmapBlockIndex always uses bloom-only path.
 #[test]
 fn mmap_vs_heap_exact_pairs_behavior() {
     let block_size = 256;
@@ -184,7 +184,7 @@ fn mmap_vs_heap_exact_pairs_behavior() {
     );
 }
 
-/// Tests that `exact-pairs` bloom filters handle all 65536 possible pairs.
+/// Tests that exact-pairs bloom filters handle all 65536 possible pairs.
 #[test]
 fn exact_pairs_all_65536_pairs() {
     let mut bloom = NgramBloom::new(EXACT_PAIR_THRESHOLD_BITS * 2).expect("valid bloom");
@@ -209,7 +209,7 @@ fn exact_pairs_all_65536_pairs() {
     }
 }
 
-/// Tests `exact-pairs` with single-byte pattern (no n-grams).
+/// Tests exact-pairs with single-byte pattern (no n-grams).
 #[test]
 fn exact_pairs_single_byte_pattern() {
     let block_size = 256;
@@ -231,7 +231,7 @@ fn exact_pairs_single_byte_pattern() {
     assert!(!candidates.is_empty());
 }
 
-/// Tests `exact-pairs` with empty pattern.
+/// Tests exact-pairs with empty pattern.
 #[test]
 fn exact_pairs_empty_pattern() {
     let block_size = 256;
@@ -286,7 +286,7 @@ fn exact_pairs_pattern_within_single_block() {
     );
 }
 
-/// Tests that `exact-pairs` correctly rejects patterns not in data.
+/// Tests that exact-pairs correctly rejects patterns not in data.
 #[test]
 fn exact_pairs_correctly_rejects_absent_patterns() {
     let block_size = 256;
