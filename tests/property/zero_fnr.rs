@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use flashsieve::{BlockIndexBuilder, ByteFilter, NgramFilter};
 use proptest::prelude::*;
 
@@ -26,7 +28,7 @@ proptest! {
         let mut padded_content = content.clone();
         let rem = padded_content.len() % block_size;
         if rem != 0 {
-            padded_content.extend(std::iter::repeat(0).take(block_size - rem));
+            padded_content.extend(std::iter::repeat_n(0, block_size - rem));
         }
 
         let index = BlockIndexBuilder::new()

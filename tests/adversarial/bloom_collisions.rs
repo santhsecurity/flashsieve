@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used, clippy::unwrap_used)]
 use flashsieve::{BlockIndexBuilder, ByteFilter, NgramFilter};
 
 #[test]
@@ -15,8 +16,8 @@ fn test_bloom_collisions_zero_fnr() {
     let mut data = vec![0u8; block_size];
 
     // Fill the rest with random data to saturate the bloom filter
-    for i in 0..block_size {
-        data[i] = (i % 256) as u8;
+    for (i, item) in data.iter_mut().enumerate().take(block_size) {
+        *item = (i % 256) as u8;
     }
 
     // Place pattern in the middle

@@ -115,8 +115,8 @@ fn bloom_hash_collision_boundary_zero_fnr() {
     let mut data = vec![0u8; 1024];
 
     // Fill with data designed to cause collisions
-    for i in 0..data.len() {
-        data[i] = (i % 256) as u8;
+    for (i, item) in data.iter_mut().enumerate() {
+        *item = (i % 256) as u8;
     }
 
     // Place pattern at the beginning
@@ -143,7 +143,7 @@ fn bloom_saturated_filter_no_false_negatives() {
     let pattern = b"TARGET";
 
     // Create data with lots of random n-grams + target pattern
-    let mut data: Vec<u8> = (0..512).map(|i| (i % 256) as u8).collect();
+    let mut data: Vec<u8> = (0..512u32).map(|i| (i % 256) as u8).collect();
     data[100..100 + pattern.len()].copy_from_slice(pattern);
 
     let bloom = NgramBloom::from_block(&data, small_bits).unwrap();
@@ -382,8 +382,7 @@ fn concurrent_100_threads_no_race() {
                     // Should always match
                     assert!(
                         filter_clone.matches_bloom(&bloom_clone),
-                        "CRITICAL FINDING: Race condition caused false negative in thread {} iter {}",
-                        thread_id, i
+                        "CRITICAL FINDING: Race condition caused false negative in thread {thread_id} iter {i}"
                     );
                 } else {
                     // Test with a different pattern (may or may not match)
@@ -519,7 +518,7 @@ fn adversarial_pathological_hash_collision() {
     let mut data = Vec::with_capacity(512);
 
     // Add many pairs that could stress the hash function
-    for i in 0..256 {
+    for i in 0u32..256 {
         data.push(i as u8);
         data.push(((i * 7) % 256) as u8);
     }
@@ -527,7 +526,7 @@ fn adversarial_pathological_hash_collision() {
     let bloom = NgramBloom::from_block(&data, 256).unwrap();
 
     // Each pair we added should be detectable
-    for i in 0..256 {
+    for i in 0u32..256 {
         let a = i as u8;
         let b = ((i * 7) % 256) as u8;
         assert!(
@@ -641,8 +640,7 @@ fn proptest_style_random_patterns() {
                 // CRITICAL: If all n-grams are present, bloom MUST match (zero FNR)
                 assert!(
                     bloom_matches,
-                    "CRITICAL FINDING: False negative! Pattern {:?} n-grams are in file but bloom rejected",
-                    pattern
+                    "CRITICAL FINDING: False negative! Pattern {pattern:?} n-grams are in file but bloom rejected"
                 );
             }
             // If not all n-grams present, bloom may match (false positive) or not — both OK
@@ -664,8 +662,7 @@ fn bloom_exact_pairs_table_integrity() {
     for window in data.windows(2) {
         assert!(
             bloom.maybe_contains_exact(window[0], window[1]),
-            "CRITICAL FINDING: Exact pairs lookup failed for {:?}",
-            window
+            "CRITICAL FINDING: Exact pairs lookup failed for {window:?}"
         );
     }
 }

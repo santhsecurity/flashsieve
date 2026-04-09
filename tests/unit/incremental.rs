@@ -33,7 +33,7 @@ fn test_incremental_append_empty_blocks_list() {
     assert_eq!(new_index.block_count(), 1);
 }
 
-/// Test that append_blocks_with_boundary correctly handles the cross-boundary n-gram.
+/// Test that `append_blocks_with_boundary` correctly handles the cross-boundary n-gram.
 ///
 /// Issue: Without the boundary byte, patterns spanning the boundary between
 /// old and new data may be missed (false negatives).
@@ -89,7 +89,7 @@ fn test_incremental_append_with_boundary_byte() {
 
 /// Test that mmap indexes preserve the exact-pair table through serialization.
 ///
-/// Issue 2: MmapBlockIndex was losing the exact-pairs table on deserialization,
+/// Issue 2: `MmapBlockIndex` was losing the exact-pairs table on deserialization,
 /// causing false negatives for 2-byte patterns.
 #[test]
 fn test_mmap_preserves_exact_pairs() {

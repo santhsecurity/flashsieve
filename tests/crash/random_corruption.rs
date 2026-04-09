@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use flashsieve::{BlockIndex, BlockIndexBuilder};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -17,7 +19,7 @@ fn test_random_corruption_recovery() {
     let valid_bytes = original.to_bytes();
 
     // Test random single byte corruptions
-    let mut rng = StdRng::seed_from_u64(0x1234567890ABCDEF);
+    let mut rng = StdRng::seed_from_u64(0x1234_5678_90AB_CDEF);
 
     // We'll run a few hundred random corruptions
     for _ in 0..1000 {
@@ -33,8 +35,7 @@ fn test_random_corruption_recovery() {
 
         assert!(
             result.is_ok(),
-            "FINDING: BlockIndex::from_bytes_checked panicked on corrupted bytes at index {}",
-            idx
+            "FINDING: BlockIndex::from_bytes_checked panicked on corrupted bytes at index {idx}"
         );
         let inner_result = result.unwrap();
         // The CRC must fail or it must fail parsing; if by a 1-in-4-billion chance the CRC matches, it could succeed, but it's extremely unlikely.
@@ -45,8 +46,7 @@ fn test_random_corruption_recovery() {
 
         assert!(
             result_unchecked.is_ok(),
-            "FINDING: BlockIndex::from_bytes panicked on corrupted bytes at index {}",
-            idx
+            "FINDING: BlockIndex::from_bytes panicked on corrupted bytes at index {idx}"
         );
         // We don't assert that unchecked fails because it might just silently accept the corrupt data without CRC.
     }

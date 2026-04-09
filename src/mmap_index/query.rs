@@ -1,7 +1,7 @@
-use crate::filter::{ByteFilter, NgramFilter};
-use crate::index::CandidateRange;
 use super::views::{ByteHistogramRef, NgramBloomRef};
 use super::MmapBlockIndex;
+use crate::filter::{ByteFilter, NgramFilter};
+use crate::index::CandidateRange;
 
 pub(super) fn candidate_blocks(
     index: &MmapBlockIndex,
@@ -40,9 +40,9 @@ pub(super) fn candidate_blocks(
                     .zip(paired_ngrams)
                     .any(|(required_bytes, ngrams)| {
                         required_bytes.iter().all(|&b| histogram.count(b) > 0)
-                            && ngrams.iter().all(|&(first, second)| {
-                                bloom.maybe_contains_exact(first, second)
-                            })
+                            && ngrams
+                                .iter()
+                                .all(|&(first, second)| bloom.maybe_contains_exact(first, second))
                     })
             } else {
                 paired_compact
@@ -50,9 +50,9 @@ pub(super) fn candidate_blocks(
                     .zip(paired_ngrams)
                     .any(|(required_bytes, ngrams)| {
                         required_bytes.iter().all(|&b| histogram.count(b) > 0)
-                            && ngrams.iter().all(|&(first, second)| {
-                                bloom.maybe_contains_bloom(first, second)
-                            })
+                            && ngrams
+                                .iter()
+                                .all(|&(first, second)| bloom.maybe_contains_bloom(first, second))
                     })
             }
         } else {
@@ -122,39 +122,40 @@ pub(super) fn candidate_blocks(
                 .map(|i| index.block_bloom(index.block_metas[i]))
                 .collect();
 
-            let multi_match =
-                if is_paired {
-                    if use_exact {
-                        paired_compact.iter().zip(paired_ngrams).any(
-                            |(required_bytes, ngrams)| {
-                                required_bytes
-                                    .iter()
-                                    .all(|&b| h_refs.iter().any(|h| h.count(b) > 0))
-                                    && ngrams.iter().all(|&(first, second)| {
-                                        b_refs.iter().any(|bloom| {
-                                            bloom.maybe_contains_exact(first, second)
-                                        })
-                                    })
-                            },
-                        )
-                    } else {
-                        paired_compact.iter().zip(paired_ngrams).any(
-                            |(required_bytes, ngrams)| {
-                                required_bytes
-                                    .iter()
-                                    .all(|&b| h_refs.iter().any(|h| h.count(b) > 0))
-                                    && ngrams.iter().all(|&(first, second)| {
-                                        b_refs.iter().any(|bloom| {
-                                            bloom.maybe_contains_bloom(first, second)
-                                        })
-                                    })
-                            },
-                        )
-                    }
+            let multi_match = if is_paired {
+                if use_exact {
+                    paired_compact
+                        .iter()
+                        .zip(paired_ngrams)
+                        .any(|(required_bytes, ngrams)| {
+                            required_bytes
+                                .iter()
+                                .all(|&b| h_refs.iter().any(|h| h.count(b) > 0))
+                                && ngrams.iter().all(|&(first, second)| {
+                                    b_refs
+                                        .iter()
+                                        .any(|bloom| bloom.maybe_contains_exact(first, second))
+                                })
+                        })
                 } else {
-                    byte_filter_matches_histogram_multi(byte_filter, &h_refs)
-                        && ngram_filter_matches_bloom_multi(ngram_filter, &b_refs)
-                };
+                    paired_compact
+                        .iter()
+                        .zip(paired_ngrams)
+                        .any(|(required_bytes, ngrams)| {
+                            required_bytes
+                                .iter()
+                                .all(|&b| h_refs.iter().any(|h| h.count(b) > 0))
+                                && ngrams.iter().all(|&(first, second)| {
+                                    b_refs
+                                        .iter()
+                                        .any(|bloom| bloom.maybe_contains_bloom(first, second))
+                                })
+                        })
+                }
+            } else {
+                byte_filter_matches_histogram_multi(byte_filter, &h_refs)
+                    && ngram_filter_matches_bloom_multi(ngram_filter, &b_refs)
+            };
 
             if multi_match {
                 for item in seen.iter_mut().take(end).skip(window_start) {

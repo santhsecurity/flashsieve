@@ -1,3 +1,5 @@
+#![allow(clippy::cast_precision_loss, clippy::expect_used, clippy::unwrap_used)]
+
 use flashsieve::{BlockIndexBuilder, ByteFilter, NgramFilter};
 
 #[test]
@@ -53,7 +55,7 @@ fn test_internet_scale_zero_fnr() {
 
     // To speed up the test we can batch patterns or query individually.
     // Let's query a subset individually to measure FPR, and batch the rest.
-    for (block_idx, pattern) in patterns.iter() {
+    for (block_idx, pattern) in &patterns {
         let byte_filter = ByteFilter::from_patterns(&[pattern.as_slice()]);
         let ngram_filter = NgramFilter::from_patterns(&[pattern.as_slice()]);
 
@@ -70,8 +72,7 @@ fn test_internet_scale_zero_fnr() {
 
         assert!(
             found,
-            "FINDING: False negative at scale! Pattern {:?} in block {} not found",
-            pattern, block_idx
+            "FINDING: False negative at scale! Pattern {pattern:?} in block {block_idx} not found"
         );
 
         // FPR = (candidates.len() - 1) / (num_blocks - 1)

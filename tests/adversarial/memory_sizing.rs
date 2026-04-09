@@ -1,4 +1,11 @@
-#![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
+#![allow(
+    clippy::cast_lossless,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unwrap_used
+)]
 //! CRITICAL: Memory sizing and cache efficiency tests.
 //!
 //! At internet scale (100K patterns, millions of files), bloom filter
@@ -17,8 +24,8 @@ use flashsieve::{BlockedNgramBloom, NgramBloom, NgramFilter};
 /// share common substrings).
 ///
 /// With 4096 bits (512 bytes) bloom per block:
-/// - Standard NgramBloom: 512 bytes + optional 64KB exact-pairs table
-/// - BlockedNgramBloom: varies by block count, each block is 64 bytes
+/// - Standard `NgramBloom`: 512 bytes + optional 64KB exact-pairs table
+/// - `BlockedNgramBloom`: varies by block count, each block is 64 bytes
 #[test]
 fn bloom_size_for_100k_patterns() {
     // Generate 100K realistic patterns (similar to malware signatures)
@@ -36,7 +43,7 @@ fn bloom_size_for_100k_patterns() {
         })
         .collect();
 
-    let pattern_refs: Vec<&[u8]> = patterns.iter().map(|p| p.as_slice()).collect();
+    let pattern_refs: Vec<&[u8]> = patterns.iter().map(std::vec::Vec::as_slice).collect();
 
     // Build the filter (contains pattern n-grams, not the bloom itself)
     let _filter = NgramFilter::from_patterns(&pattern_refs);
@@ -131,9 +138,9 @@ fn l2_cache_fit_analysis() {
     assert_eq!(bits, 4096, "Standard config should be 4096 bits");
 }
 
-/// Measure memory overhead of BlockedNgramBloom vs NgramBloom.
+/// Measure memory overhead of `BlockedNgramBloom` vs `NgramBloom`.
 ///
-/// BlockedNgramBloom uses cache-line-sized blocks (512 bits = 64 bytes)
+/// `BlockedNgramBloom` uses cache-line-sized blocks (512 bits = 64 bytes)
 /// to improve cache locality during queries.
 #[test]
 fn blocked_vs_standard_bloom_memory() {
@@ -168,8 +175,8 @@ fn memory_scaling_sublinear() {
             .map(|i| format!("SIG_{:08X}", i).into_bytes())
             .collect();
 
-        let pattern_refs: Vec<&[u8]> = patterns.iter().map(|p| p.as_slice()).collect();
-        let filter = NgramFilter::from_patterns(&pattern_refs);
+        let pattern_refs: Vec<&[u8]> = patterns.iter().map(std::vec::Vec::as_slice).collect();
+        let _filter = NgramFilter::from_patterns(&pattern_refs);
 
         // Memory usage scales with unique n-grams, not pattern count
         // This is the key efficiency property of the union_ngrams optimization
@@ -185,7 +192,7 @@ fn memory_scaling_sublinear() {
 
 /// Verify compact bloom filter fits in L1 cache.
 ///
-/// NgramBloom::from_block_compact creates a half-size bloom filter
+/// `NgramBloom::from_block_compact` creates a half-size bloom filter
 /// that trades slightly higher FPR for L1 cache fit.
 #[test]
 fn compact_bloom_l1_cache_fit() {
@@ -272,7 +279,7 @@ fn memory_100k_patterns_no_oom() {
         })
         .collect();
 
-    let pattern_refs: Vec<&[u8]> = patterns.iter().map(|p| p.as_slice()).collect();
+    let pattern_refs: Vec<&[u8]> = patterns.iter().map(std::vec::Vec::as_slice).collect();
 
     // Build filter - should not OOM
     let filter = NgramFilter::from_patterns(&pattern_refs);

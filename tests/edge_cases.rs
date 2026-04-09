@@ -1,6 +1,7 @@
+#![allow(clippy::unwrap_used)]
 use flashsieve::{
-    BlockIndexBuilder, ByteFilter, ByteHistogram, FileBloomIndex, IncrementalBuilder,
-    NgramBloom, NgramFilter,
+    BlockIndexBuilder, ByteFilter, ByteHistogram, FileBloomIndex, IncrementalBuilder, NgramBloom,
+    NgramFilter,
 };
 
 /// Empty data should produce an index with zero blocks.
@@ -14,7 +15,10 @@ fn empty_data_yields_zero_blocks() {
 /// A single byte has no 2-byte n-grams, so the bloom filter is empty but valid.
 #[test]
 fn single_byte_block() {
-    let index = BlockIndexBuilder::new().block_size(256).build(b"x").unwrap();
+    let index = BlockIndexBuilder::new()
+        .block_size(256)
+        .build(b"x")
+        .unwrap();
     assert_eq!(index.block_count(), 1);
 
     let bf = ByteFilter::from_patterns(&[b"x".as_slice()]);
@@ -27,7 +31,10 @@ fn single_byte_block() {
 #[test]
 fn all_identical_bytes() {
     let data = vec![b'a'; 1024];
-    let index = BlockIndexBuilder::new().block_size(256).build(&data).unwrap();
+    let index = BlockIndexBuilder::new()
+        .block_size(256)
+        .build(&data)
+        .unwrap();
     assert_eq!(index.block_count(), 4);
 
     let bf = ByteFilter::from_patterns(&[b"aa".as_slice()]);
@@ -42,7 +49,7 @@ fn all_identical_bytes() {
 #[test]
 fn pattern_longer_than_block_size() {
     let block_size = 256;
-    let pattern: Vec<u8> = (0..300).map(|i| b'a' + (i % 26) as u8).collect();
+    let pattern: Vec<u8> = (0..300u32).map(|i| b'a' + (i % 26) as u8).collect();
     assert!(pattern.len() > block_size);
 
     let mut data = vec![b'x'; block_size * 4];
@@ -57,7 +64,10 @@ fn pattern_longer_than_block_size() {
     let bf = ByteFilter::from_patterns(&[pattern.as_slice()]);
     let nf = NgramFilter::from_patterns(&[pattern.as_slice()]);
     let candidates = index.candidate_blocks(&bf, &nf);
-    assert!(!candidates.is_empty(), "long pattern should produce candidates");
+    assert!(
+        !candidates.is_empty(),
+        "long pattern should produce candidates"
+    );
 }
 
 /// Empty pattern list should produce filters that reject everything.
@@ -78,20 +88,26 @@ fn empty_patterns_never_match() {
 #[test]
 fn minimum_block_size() {
     let data = vec![0u8; 256];
-    let index = BlockIndexBuilder::new().block_size(256).build(&data).unwrap();
+    let index = BlockIndexBuilder::new()
+        .block_size(256)
+        .build(&data)
+        .unwrap();
     assert_eq!(index.block_count(), 1);
 }
 
-/// Unaligned data length should work with build() and produce a partial final block.
+/// Unaligned data length should work with `build()` and produce a partial final block.
 #[test]
 fn unaligned_data_length() {
     let data = vec![0u8; 513]; // 2 full 256-byte blocks + 1 byte
-    let index = BlockIndexBuilder::new().block_size(256).build(&data).unwrap();
+    let index = BlockIndexBuilder::new()
+        .block_size(256)
+        .build(&data)
+        .unwrap();
     assert_eq!(index.block_count(), 3);
     assert_eq!(index.total_data_length(), 513);
 }
 
-/// Histogram should saturate at u32::MAX without panicking.
+/// Histogram should saturate at `u32::MAX` without panicking.
 #[test]
 fn histogram_saturates_u32_max() {
     // We can't realistically hit u32::MAX in a single block, but we verify the
@@ -101,15 +117,12 @@ fn histogram_saturates_u32_max() {
     assert_eq!(hist.count(b'a'), 1024);
 }
 
-/// FileBloomIndex should error on an empty index.
+/// `FileBloomIndex` should error on an empty index.
 #[test]
 fn file_bloom_requires_at_least_one_block() {
     let index = BlockIndexBuilder::new().block_size(256).build(b"").unwrap();
     let result = FileBloomIndex::try_new(index);
-    assert!(matches!(
-        result,
-        Err(flashsieve::Error::EmptyBlockIndex)
-    ));
+    assert!(matches!(result, Err(flashsieve::Error::EmptyBlockIndex)));
 }
 
 /// Incremental append to an index built from unaligned data should fail
@@ -143,7 +156,7 @@ fn remove_non_suffix_block_errors() {
     ));
 }
 
-/// Removing a suffix block should succeed and adjust total_len.
+/// Removing a suffix block should succeed and adjust `total_len`.
 #[test]
 fn remove_suffix_block_succeeds() {
     let mut index = BlockIndexBuilder::new()
@@ -157,16 +170,13 @@ fn remove_suffix_block_succeeds() {
     assert_eq!(index.total_data_length(), 256);
 }
 
-/// NgramBloom::with_target_fpr should reject invalid FPR values.
+/// `NgramBloom::with_target_fpr` should reject invalid FPR values.
 #[test]
 fn invalid_fpr_values_are_rejected() {
     for bad in [0.0_f64, 1.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
         let result = NgramBloom::with_target_fpr(bad, 100);
-        // We clamped these values instead of returning an error, 
+        // We clamped these values instead of returning an error,
         // because adversarial_fpr_extreme tests require it to not panic and return Ok.
-        assert!(
-            result.is_ok(),
-            "FPR {bad} should be clamped and succeed"
-        );
+        assert!(result.is_ok(), "FPR {bad} should be clamped and succeed");
     }
 }

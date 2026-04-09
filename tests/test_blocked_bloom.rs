@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use flashsieve::bloom::filter::BlockedNgramBloom;
 #[test]
 fn test_blocked() {

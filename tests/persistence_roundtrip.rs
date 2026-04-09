@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use flashsieve::{
     transport, BlockIndex, BlockIndexBuilder, ByteFilter, MmapBlockIndex, NgramFilter,
 };
@@ -23,7 +25,11 @@ fn block_index_round_trip_preserves_queries() {
     assert_eq!(original.block_count(), recovered.block_count());
     assert_eq!(original.total_data_length(), recovered.total_data_length());
 
-    for pattern in [b"secret".as_slice(), b"token".as_slice(), b"missing".as_slice()] {
+    for pattern in [
+        b"secret".as_slice(),
+        b"token".as_slice(),
+        b"missing".as_slice(),
+    ] {
         let bf = ByteFilter::from_patterns(&[pattern]);
         let nf = NgramFilter::from_patterns(&[pattern]);
         assert_eq!(
@@ -57,7 +63,7 @@ fn exact_pair_table_survives_round_trip() {
     assert!(recovered.candidate_blocks_ngram(&nf_miss).is_empty());
 }
 
-/// MmapBlockIndex must agree with heap-deserialized BlockIndex after round-trip.
+/// `MmapBlockIndex` must agree with heap-deserialized `BlockIndex` after round-trip.
 #[test]
 fn mmap_index_matches_heap_after_round_trip() {
     let bytes = BlockIndexBuilder::new()
@@ -123,8 +129,7 @@ fn corruption_detected_by_crc() {
     let result = BlockIndex::from_bytes_checked(&bytes);
     assert!(
         matches!(result, Err(flashsieve::Error::ChecksumMismatch { .. })),
-        "expected CRC mismatch, got {:?}",
-        result
+        "expected CRC mismatch, got {result:?}"
     );
 }
 
@@ -140,11 +145,11 @@ fn truncated_data_fails_gracefully() {
 
     for cut in [1, 10, bytes.len() / 2, bytes.len() - 1] {
         let result = BlockIndex::from_bytes_checked(&bytes[..cut]);
-        assert!(result.is_err(), "truncation at {} should fail", cut);
+        assert!(result.is_err(), "truncation at {cut} should fail");
     }
 }
 
-/// from_bytes (Option API) must return None on bad magic without panicking.
+/// `from_bytes` (Option API) must return None on bad magic without panicking.
 #[test]
 fn from_bytes_option_api_on_bad_input() {
     let bad = b"NOT_AN_INDEX".to_vec();
