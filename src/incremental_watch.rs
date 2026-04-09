@@ -67,13 +67,13 @@ pub struct ChangeSet {
 
 impl ChangeSet {
     /// Whether any changes were detected.
-    #[must_use] 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.modified.is_empty() && self.removed.is_empty()
     }
 
     /// Total number of changes.
-    #[must_use] 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.modified.len() + self.removed.len()
     }
@@ -158,13 +158,13 @@ impl IncrementalWatch {
     }
 
     /// Root directory being watched.
-    #[must_use] 
+    #[must_use]
     pub fn root(&self) -> &Path {
         &self.root
     }
 
     /// Time since the last poll.
-    #[must_use] 
+    #[must_use]
     pub fn since_last_poll(&self) -> Duration {
         self.last_poll.elapsed()
     }
@@ -198,6 +198,7 @@ fn walk_dir_inner(dir: &Path, max_size: u64, out: &mut Vec<PathBuf>) -> std::io:
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
     use super::*;
     use std::fs;
 

@@ -14,7 +14,7 @@ use std::thread;
 
 /// Test 100 threads reading shared bloom filter — must not race.
 ///
-/// NgramBloom and NgramFilter are immutable after construction,
+/// `NgramBloom` and `NgramFilter` are immutable after construction,
 /// so concurrent reads should be safe. This test verifies no
 /// data races exist.
 #[test]
@@ -225,9 +225,9 @@ fn concurrent_exact_pairs_table_reads() {
     }
 }
 
-/// Test concurrent BlockedNgramBloom operations.
+/// Test concurrent `BlockedNgramBloom` operations.
 ///
-/// BlockedNgramBloom uses cache-line-sized blocks for better locality.
+/// `BlockedNgramBloom` uses cache-line-sized blocks for better locality.
 #[test]
 fn concurrent_blocked_bloom_reads() {
     use flashsieve::BlockedNgramBloom;
@@ -315,7 +315,7 @@ fn concurrent_stress_barrier_synchronization() {
 
 /// Test concurrent mmap index reads.
 ///
-/// MmapBlockIndex provides zero-copy access to serialized indexes.
+/// `MmapBlockIndex` provides zero-copy access to serialized indexes.
 /// Multiple threads reading from the same mmap should be safe.
 #[test]
 fn concurrent_mmap_index_reads() {
@@ -396,7 +396,8 @@ fn concurrent_filter_building() {
             barrier_clone.wait();
 
             // Each thread builds the same filter
-            let pattern_refs: Vec<&[u8]> = patterns_clone.iter().map(|p| p.as_slice()).collect();
+            let pattern_refs: Vec<&[u8]> =
+                patterns_clone.iter().map(std::vec::Vec::as_slice).collect();
             let filter = NgramFilter::from_patterns(&pattern_refs);
 
             // Build a bloom containing one of the patterns
@@ -421,7 +422,7 @@ fn concurrent_filter_building() {
     }
 }
 
-/// Test that NgramFilter is Send + Sync.
+/// Test that `NgramFilter` is Send + Sync.
 ///
 /// Compile-time check that the filter can be safely shared between threads.
 #[test]

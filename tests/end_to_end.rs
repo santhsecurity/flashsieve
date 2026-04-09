@@ -34,8 +34,7 @@ fn end_to_end_filtering() {
     for (pattern, offset) in patterns.iter().zip(offsets) {
         let planted_block_start = (offset / block_size) * block_size;
         let found = candidates.iter().any(|range| {
-            planted_block_start >= range.offset
-                && planted_block_start < range.offset + range.length
+            planted_block_start >= range.offset && planted_block_start < range.offset + range.length
         });
         assert!(
             found,
@@ -44,7 +43,10 @@ fn end_to_end_filtering() {
             std::str::from_utf8(pattern).unwrap_or("<binary>"),
             offset,
             planted_block_start,
-            candidates.iter().map(|c| (c.offset, c.length)).collect::<Vec<_>>()
+            candidates
+                .iter()
+                .map(|c| (c.offset, c.length))
+                .collect::<Vec<_>>()
         );
     }
 

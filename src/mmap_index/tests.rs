@@ -19,8 +19,7 @@ fn mmap_candidate_blocks_match_heap_index() {
         .to_bytes();
     let heap_index =
         BlockIndex::from_bytes_checked(&bytes).unwrap_or_else(|error| panic!("{error}"));
-    let mmap_index =
-        MmapBlockIndex::from_slice(&bytes).unwrap_or_else(|error| panic!("{error}"));
+    let mmap_index = MmapBlockIndex::from_slice(&bytes).unwrap_or_else(|error| panic!("{error}"));
 
     for pattern in [
         b"secret".as_slice(),
@@ -46,8 +45,7 @@ fn mmap_accessors_match_heap_index_contents() {
         .to_bytes();
     let heap_index =
         BlockIndex::from_bytes_checked(&bytes).unwrap_or_else(|error| panic!("{error}"));
-    let mmap_index =
-        MmapBlockIndex::from_slice(&bytes).unwrap_or_else(|error| panic!("{error}"));
+    let mmap_index = MmapBlockIndex::from_slice(&bytes).unwrap_or_else(|error| panic!("{error}"));
 
     #[allow(clippy::unwrap_used)]
     let histogram = mmap_index.try_histogram(0).unwrap();

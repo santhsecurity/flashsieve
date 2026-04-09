@@ -1,6 +1,6 @@
 use flashsieve::{BlockIndexBuilder, ByteFilter, ByteHistogram};
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let block_size = 256;
     let pattern = b"boundary";
     let mut data = vec![b'x'; block_size * 3];
@@ -12,16 +12,16 @@ fn main() {
     let index = BlockIndexBuilder::new()
         .block_size(block_size)
         .bloom_bits(1024)
-        .build(&data)
-        .unwrap();
+        .build(&data)?;
 
     let bf = ByteFilter::from_patterns(&[pattern.as_slice()]);
-    
+
     for i in 0..3 {
         let start = i * block_size;
-        let block = &data[start..(start+block_size).min(data.len())];
+        let block = &data[start..(start + block_size).min(data.len())];
         let hist = ByteHistogram::from_block(block);
-        println!("block {} matches_histogram={} bytes=b:{} o:{} u:{} n:{} d:{} a:{} r:{} y:{}",
+        println!(
+            "block {} matches_histogram={} bytes=b:{} o:{} u:{} n:{} d:{} a:{} r:{} y:{}",
             i,
             bf.matches_histogram(&hist),
             hist.count(b'b'),
@@ -34,6 +34,7 @@ fn main() {
             hist.count(b'y'),
         );
     }
-    
+
     println!("byte candidates: {:?}", index.candidate_blocks_byte(&bf));
+    Ok(())
 }

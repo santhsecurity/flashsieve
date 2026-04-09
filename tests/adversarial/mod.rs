@@ -600,5 +600,5 @@ fn crc32_compute(data: &[u8]) -> u32 {
 pub mod bloom_collisions;
 pub mod concurrent_100_threads;
 pub mod hash_distribution;
-pub mod memory_sizing;
 pub mod impossible_conditions;
+pub mod memory_sizing;

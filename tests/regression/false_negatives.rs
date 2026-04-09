@@ -1,4 +1,11 @@
-#![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
+#![allow(
+    clippy::doc_markdown,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::redundant_closure_for_method_calls,
+    clippy::uninlined_format_args,
+    clippy::unwrap_used
+)]
 //! CRITICAL: Zero false negative tests.
 //!
 //! A false negative in flashsieve means silently skipping a file that
