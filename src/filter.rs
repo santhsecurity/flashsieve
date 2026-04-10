@@ -342,15 +342,19 @@ impl NgramFilter {
         }
 
         // Fast early rejection: if the bloom doesn't contain ANY of the
-        // union n-grams, no pattern can match. This is O(union_size) instead
-        // of O(patterns × ngrams_per_pattern). For 100K patterns with
-        // ~5000 unique n-grams, this saves 1M+ bloom lookups per file.
+        // union n-grams, no pattern that *requires* a 2-byte n-gram can match.
+        // This is O(union_size) instead of O(patterns × ngrams_per_pattern).
         //
-        // CORRECTNESS: The union contains ALL unique n-grams from ALL patterns.
-        // If NONE of the union n-grams are in the bloom, then NO pattern can
-        // possibly match (since every pattern's n-grams are a subset of the union).
-        // This has ZERO false negatives by set theory.
-        if !self.union_ngrams.is_empty() && !bloom.maybe_contains_any(&self.union_ngrams) {
+        // CORRECTNESS: The union is the set of all 2-byte n-grams from patterns
+        // of length ≥ 2. If some pattern has no 2-byte n-grams (length 0–1), it
+        // matches any bloom (`all` over an empty n-gram list is true). In that
+        // case we must NOT reject here, or we get a false negative when a long
+        // pattern's n-grams are absent but a short pattern still applies.
+        let any_pattern_has_no_ngrams = self.pattern_ngrams.iter().any(|ngrams| ngrams.is_empty());
+        if !any_pattern_has_no_ngrams
+            && !self.union_ngrams.is_empty()
+            && !bloom.maybe_contains_any(&self.union_ngrams)
+        {
             return false;
         }
 
@@ -636,6 +640,18 @@ impl CompositeFilter {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ngram_filter_union_short_circuit_skips_when_any_pattern_has_no_bigrams() {
+        // Regression: union early-rejection must not fire when one pattern has
+        // zero 2-byte n-grams (length 0–1), which vacuously matches any bloom.
+        let filter = NgramFilter::from_patterns(&[b"x".as_slice(), b"hello".as_slice()]);
+        let bloom = NgramBloom::from_block(b"x", 1024).unwrap();
+        assert!(
+            filter.matches_bloom(&bloom),
+            "short pattern should match; long pattern's union must not force rejection"
+        );
+    }
 
     #[test]
     fn ngram_filter_from_patterns_with_lcp_optimization() {

@@ -833,9 +833,16 @@ fn ngram_filter_matches_bloom(filter: &NgramFilter, bloom: NgramBloomRef<'_>) ->
         return false;
     }
 
-    // Fast early rejection: check union n-grams first (O(union_size) vs O(patterns × ngrams))
+    // Fast early rejection: same rules as `NgramFilter::matches_bloom` (see filter.rs).
+    let any_pattern_has_no_ngrams = filter
+        .pattern_ngrams()
+        .iter()
+        .any(|ngrams| ngrams.is_empty());
     let union_ngrams = filter.union_ngrams();
-    if !union_ngrams.is_empty() && !bloom.maybe_contains_any(union_ngrams) {
+    if !any_pattern_has_no_ngrams
+        && !union_ngrams.is_empty()
+        && !bloom.maybe_contains_any(union_ngrams)
+    {
         return false;
     }
 
