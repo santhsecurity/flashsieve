@@ -365,6 +365,9 @@ pub(crate) fn parse_serialized_index_header(
 
     let mut offset = 8;
     let block_size = usize::try_from(read_u64_le_checked(data, &mut offset)?).unwrap_or(usize::MAX);
+    if block_size == 0 || !block_size.is_power_of_two() || block_size < 256 {
+        return Err(Error::InvalidBlockSize { size: block_size });
+    }
     let total_len = usize::try_from(read_u64_le_checked(data, &mut offset)?).unwrap_or(usize::MAX);
     let block_count_raw = read_u64_le_checked(data, &mut offset)?;
     let block_count = usize::try_from(block_count_raw).unwrap_or(usize::MAX);

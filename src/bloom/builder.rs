@@ -45,6 +45,12 @@ impl NgramBloom {
 
     /// Build from a data block, inserting all 2-byte n-grams.
     ///
+    /// **Boundary note:** This only indexes n-grams that lie entirely within
+    /// `data`. If `data` is one block of a larger stream, the caller must
+    /// manually insert the cross-boundary n-gram (last byte of the previous
+    /// block + first byte of this block) to avoid false negatives for patterns
+    /// that span the boundary.
+    ///
     /// # Errors
     ///
     /// Returns [`Error::ZeroBloomBits`] if
@@ -279,6 +285,10 @@ impl BlockedNgramBloom {
     }
 
     /// Build a blocked bloom filter from an input block.
+    ///
+    /// **Boundary note:** Like [`NgramBloom::from_block`], this only indexes
+    /// n-grams inside `data`. Cross-boundary n-grams must be inserted manually
+    /// when the data is part of a larger stream.
     ///
     /// # Errors
     ///

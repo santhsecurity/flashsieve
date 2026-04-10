@@ -1,11 +1,11 @@
 pub(crate) const NUM_HASHES: u32 = 3;
 
-/// Threshold for allocating the exact-pairs table (64KB).
+/// Threshold for allocating the exact-pairs table (8KB).
 ///
 /// The exact-pairs table provides O(1) zero-FPR lookups for all 65,536 possible
 /// 2-byte n-grams. It's allocated when the bloom filter has ≥4096 bits because:
 ///
-/// 1. At 4096 bits, the bloom uses 512 bytes; adding 64KB is a 128x increase
+/// 1. At 4096 bits, the bloom uses 512 bytes; adding 8KB is a 16x increase
 /// 2. The table eliminates ALL false positives for 2-byte queries
 /// 3. Lookup is a single array index vs 3 hash probes
 ///

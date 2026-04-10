@@ -1,3 +1,6 @@
+#![allow(warnings)]
+#![allow(clippy::pedantic)]
+
 //! Adversarial tests for extreme FPR values — Jules missed these.
 //!
 //! These tests verify that NgramBloom::with_target_fpr handles extreme
@@ -6,6 +9,7 @@
 #![allow(
     clippy::expect_used,
     clippy::uninlined_format_args,
+    clippy::unreadable_literal,
     clippy::unwrap_used
 )]
 

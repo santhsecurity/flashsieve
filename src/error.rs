@@ -145,6 +145,14 @@ pub enum Error {
         /// The invalid FPR value provided by the caller.
         fpr: f64,
     },
+    /// The index ends with a partial block and cannot be appended to or merged.
+    #[error("index ends with a partial block ({total_len} bytes, block size {block_size}). Fix: rebuild from aligned source data or remove the trailing partial block.")]
+    TrailingPartialBlock {
+        /// Total length of the indexed data in bytes.
+        total_len: usize,
+        /// Block size in bytes.
+        block_size: usize,
+    },
 }
 
 /// Convenience result type for `flashsieve`.

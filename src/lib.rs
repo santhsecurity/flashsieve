@@ -117,6 +117,10 @@
     clippy::missing_errors_doc,
     clippy::too_many_lines
 )]
+#![cfg_attr(
+    test,
+    allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)
+)]
 #![deny(unsafe_code)]
 
 /// Bloom filter primitives for block-level 2-byte n-gram summaries.
