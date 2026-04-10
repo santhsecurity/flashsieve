@@ -135,7 +135,9 @@ impl BlockIndex {
     ///
     /// # Errors
     ///
-    /// Same as [`append_block`](Self::append_block).
+    /// Returns [`Error::UnalignedData`] when `block_data` is empty or exceeds
+    /// the block size, or [`Error::TrailingPartialBlock`] when the existing
+    /// index does not end on a block boundary.
     pub fn append_block_with_boundary(
         &mut self,
         block_data: &[u8],
@@ -149,8 +151,8 @@ impl BlockIndex {
         }
 
         if self.total_len % self.block_size != 0 {
-            return Err(Error::UnalignedData {
-                data_len: self.total_len,
+            return Err(Error::TrailingPartialBlock {
+                total_len: self.total_len,
                 block_size: self.block_size,
             });
         }
@@ -179,11 +181,34 @@ impl BlockIndex {
     /// # Errors
     ///
     /// Returns [`Error::IncompatibleIndexConfiguration`]
-    /// when the indexes use different block sizes or bloom filter sizes.
+    /// when the indexes use different block sizes or bloom filter sizes, or
+    /// [`Error::TrailingPartialBlock`] when either index ends with a partial
+    /// block.
+    ///
+    /// # Limitations
+    ///
+    /// This does **not** insert the cross-boundary n-gram between the last
+    /// block of `self` and the first block of `other`. Patterns spanning that
+    /// boundary may produce false negatives. To avoid this, ensure the data
+    /// was indexed as one contiguous stream.
     pub fn merge(&mut self, other: &BlockIndex) -> Result<()> {
         if self.block_size != other.block_size {
             return Err(Error::IncompatibleIndexConfiguration {
                 reason: "block_size differs",
+            });
+        }
+
+        if self.total_len % self.block_size != 0 {
+            return Err(Error::TrailingPartialBlock {
+                total_len: self.total_len,
+                block_size: self.block_size,
+            });
+        }
+
+        if other.total_len % other.block_size != 0 {
+            return Err(Error::TrailingPartialBlock {
+                total_len: other.total_len,
+                block_size: other.block_size,
             });
         }
 

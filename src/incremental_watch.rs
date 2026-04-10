@@ -122,8 +122,14 @@ impl IncrementalWatch {
 
     /// Build a block index from only the modified files.
     ///
-    /// Reads each modified file, builds a streaming block index, and returns it.
-    /// The caller can then merge this with the existing index.
+    /// Reads each modified file, concatenates them, and builds a single block
+    /// index. The caller can then merge this with the existing index.
+    ///
+    /// # Caveats
+    ///
+    /// Files are concatenated directly, so n-grams crossing file boundaries
+    /// are indexed. This can only cause false positives (extra candidate
+    /// blocks), never false negatives.
     ///
     /// # Errors
     ///
@@ -137,12 +143,13 @@ impl IncrementalWatch {
         for path in &changes.modified {
             if let Ok(data) = std::fs::read(path) {
                 all_bytes.extend_from_slice(&data);
-                // Pad to block boundary
-                let remainder = all_bytes.len() % self.config.block_size;
-                if remainder != 0 {
-                    all_bytes.resize(all_bytes.len() + self.config.block_size - remainder, 0);
-                }
             }
+        }
+
+        // Pad to block boundary only after all files are concatenated.
+        let remainder = all_bytes.len() % self.config.block_size;
+        if remainder != 0 {
+            all_bytes.resize(all_bytes.len() + self.config.block_size - remainder, 0);
         }
 
         if all_bytes.is_empty() {
@@ -197,6 +204,7 @@ fn walk_dir_inner(dir: &Path, max_size: u64, out: &mut Vec<PathBuf>) -> std::io:
 }
 
 #[cfg(test)]
+#[allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 mod tests {
     use super::*;
     use std::fs;

@@ -837,7 +837,7 @@ fn ngram_filter_matches_bloom(filter: &NgramFilter, bloom: NgramBloomRef<'_>) ->
     let any_pattern_has_no_ngrams = filter
         .pattern_ngrams()
         .iter()
-        .any(|ngrams| ngrams.is_empty());
+        .any(Vec::is_empty);
     let union_ngrams = filter.union_ngrams();
     if !any_pattern_has_no_ngrams
         && !union_ngrams.is_empty()

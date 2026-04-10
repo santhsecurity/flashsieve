@@ -1,3 +1,5 @@
+#![allow(clippy::pedantic)]
+
 //! Adversarial tests for exact-pairs at block boundaries — Jules missed these.
 //!
 //! These tests verify that patterns at block boundaries are correctly found

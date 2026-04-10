@@ -57,7 +57,7 @@ fn test_incremental_append_partial_middle_rejected() {
         .build(b"short") // 5 bytes, partial block
         .unwrap();
     let result = index.append_block(b"more"); // try to append after partial
-    assert!(matches!(result, Err(Error::UnalignedData { .. })));
+    assert!(matches!(result, Err(Error::TrailingPartialBlock { .. })));
 }
 
 #[test]

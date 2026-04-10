@@ -100,10 +100,11 @@ fn single_occurrence_in_random_data_never_missed() {
     let candidates = index.candidate_blocks(&byte_filter, &ngram_filter);
 
     let target_block = placement_offset / block_size;
+    let target_offset = target_block * block_size;
     assert!(
         candidates
             .iter()
-            .any(|r| r.offset / block_size == target_block),
+            .any(|r| r.offset <= target_offset && target_offset < r.offset + r.length),
         "pattern placed in block {target_block} was not found in candidates"
     );
 }

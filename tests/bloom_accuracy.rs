@@ -1,3 +1,7 @@
+#![allow(clippy::pedantic)]
+#![allow(clippy::cast_precision_loss, clippy::doc_markdown, clippy::explicit_iter_loop, clippy::uninlined_format_args, clippy::unreadable_literal)]
+#![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
+
 use flashsieve::NgramBloom;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -69,12 +73,14 @@ fn exact_pair_table_eliminates_all_false_positives() {
         for b in 0_u8..=255 {
             let was_inserted = inserted.contains(&(a, b));
             let contains = bloom.maybe_contains(a, b);
-            if !was_inserted && contains {
-                panic!("false positive for ({a}, {b}) with exact-pair table");
-            }
-            if was_inserted && !contains {
-                panic!("false negative for ({a}, {b}) — exact-pair table broken");
-            }
+            assert!(
+                was_inserted || !contains,
+                "false positive for ({a}, {b}) with exact-pair table"
+            );
+            assert!(
+                !was_inserted || contains,
+                "false negative for ({a}, {b}) — exact-pair table broken"
+            );
         }
     }
 }

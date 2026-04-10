@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
+
 #![allow(
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,

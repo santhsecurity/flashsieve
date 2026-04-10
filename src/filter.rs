@@ -350,7 +350,7 @@ impl NgramFilter {
         // matches any bloom (`all` over an empty n-gram list is true). In that
         // case we must NOT reject here, or we get a false negative when a long
         // pattern's n-grams are absent but a short pattern still applies.
-        let any_pattern_has_no_ngrams = self.pattern_ngrams.iter().any(|ngrams| ngrams.is_empty());
+        let any_pattern_has_no_ngrams = self.pattern_ngrams.iter().any(Vec::is_empty);
         if !any_pattern_has_no_ngrams
             && !self.union_ngrams.is_empty()
             && !bloom.maybe_contains_any(&self.union_ngrams)

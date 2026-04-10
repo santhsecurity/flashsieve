@@ -12,8 +12,8 @@
 //! ```text
 //! Offset  Size  Field                    Description
 //! ─────────────────────────────────────────────────────────────
-//! 0       4     magic                    "FSIE" (0x46 0x53 0x49 0x45)
-//! 4       1     version                  Format version (2)
+//! 0       4     magic                    "FSBX" (0x46 0x53 0x42 0x58)
+//! 4       4     version                  Format version (2)
 //! 5       8     block_size               Block size in bytes (u64 LE)
 //! 13      8     total_len                Total data length in bytes (u64 LE)
 //! 21      8     block_count              Number of blocks (u64 LE)
