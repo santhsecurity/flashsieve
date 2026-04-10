@@ -184,14 +184,30 @@ impl BlockIndex {
     /// when the indexes use different block sizes or bloom filter sizes, or
     /// [`Error::TrailingPartialBlock`] when either index ends with a partial
     /// block.
-    ///
-    /// # Limitations
-    ///
-    /// This does **not** insert the cross-boundary n-gram between the last
-    /// block of `self` and the first block of `other`. Patterns spanning that
-    /// boundary may produce false negatives. To avoid this, ensure the data
-    /// was indexed as one contiguous stream.
     pub fn merge(&mut self, other: &BlockIndex) -> Result<()> {
+        self.merge_with_boundary(other, None, None)
+    }
+
+    /// Merge `other` into `self` with explicit boundary-byte handling.
+    ///
+    /// `self_last_byte` should be the last byte of the data represented by
+    /// `self`, and `other_first_byte` should be the first byte of the data
+    /// represented by `other`. When both are provided, the cross-boundary
+    /// n-gram is inserted into `other`'s first bloom filter, eliminating false
+    /// negatives for patterns that span the merge boundary.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::IncompatibleIndexConfiguration`]
+    /// when the indexes use different block sizes or bloom filter sizes, or
+    /// [`Error::TrailingPartialBlock`] when either index ends with a partial
+    /// block.
+    pub fn merge_with_boundary(
+        &mut self,
+        other: &BlockIndex,
+        self_last_byte: Option<u8>,
+        other_first_byte: Option<u8>,
+    ) -> Result<()> {
         if self.block_size != other.block_size {
             return Err(Error::IncompatibleIndexConfiguration {
                 reason: "block_size differs",
@@ -220,13 +236,20 @@ impl BlockIndex {
             });
         }
 
+        let mut other_blooms: Vec<crate::bloom::NgramBloom> = other.blooms.clone();
+        if let (Some(prev_byte), Some(first_byte), Some(first_bloom)) =
+            (self_last_byte, other_first_byte, other_blooms.first_mut())
+        {
+            first_bloom.insert_ngram(prev_byte, first_byte);
+        }
+
         self.total_len = self.total_len.checked_add(other.total_len).ok_or(
             Error::IncompatibleIndexConfiguration {
                 reason: "total length overflow",
             },
         )?;
         self.histograms.extend(other.histograms.iter().cloned());
-        self.blooms.extend(other.blooms.iter().cloned());
+        self.blooms.extend(other_blooms);
         self.bloom_bits = self_bloom_bits;
         Ok(())
     }

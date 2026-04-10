@@ -531,7 +531,9 @@ mod tests {
     #[test]
     fn compact_bloom_zero_false_negatives() {
         let data = b"hello world this is a test pattern with several n-grams";
-        let block_size = 1024;
+        // Use a block size large enough that block_size/2 > EXACT_PAIR_THRESHOLD_BITS
+        // so the compact filter is actually smaller than the standard one.
+        let block_size = 16_384;
 
         let compact = NgramBloom::from_block_compact(data, block_size).unwrap();
 

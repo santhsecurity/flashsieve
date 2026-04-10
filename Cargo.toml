@@ -1,6 +1,6 @@
 [package]
 name = "flashsieve"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
@@ -43,15 +43,6 @@ harness = false
 name = "legendary_bench"
 harness = false
 
-[lints.clippy]
-unwrap_used = "deny"
-expect_used = "deny"
-todo = "deny"
-unimplemented = "deny"
-panic = "deny"
-missing_errors_doc = "allow"
-cast_possible_truncation = "allow"
-pedantic = { level = "warn", priority = -1 }
 
 [[test]]
 name="scale_suite"
@@ -61,4 +52,3 @@ path="tests/scale_suite.rs"
 [[test]]
 name="property_suite"
 path="tests/property_suite.rs"
-

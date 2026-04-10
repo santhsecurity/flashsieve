@@ -144,6 +144,8 @@ pub mod incremental;
 pub mod incremental_watch;
 /// Indexed block metadata and candidate range queries.
 pub mod index;
+mod mmap_query;
+mod mmap_write;
 /// Zero-parse views over serialized block-index data.
 pub mod mmap_index;
 /// Compressed transport format for peer-to-peer bloom index sharing.

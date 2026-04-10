@@ -73,7 +73,7 @@ fn ngram_filter_100k_patterns_no_oom() {
     for i in 0..100_000 {
         // Create unique patterns of varying lengths
         let len = 8 + (i % 24); // 8-32 bytes
-        let mut pattern = Vec::with_capacity(len);
+        let mut pattern = vec![0u8; len];
         for (j, item) in pattern.iter_mut().enumerate().take(len) {
             // Deterministic but unique content
             *item = ((i * 31 + j * 17) % 256) as u8;

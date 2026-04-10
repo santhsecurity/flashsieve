@@ -22,6 +22,8 @@ use crate::index::BlockIndex;
 const TRANSPORT_MAGIC: [u8; 4] = *b"FSTR";
 const TRANSPORT_VERSION: u32 = 1;
 const HEADER_SIZE: usize = 4 + 4 + 1 + 8; // magic + version + compression + uncompressed_size
+/// Maximum uncompressed transport payload (16 GiB) to prevent unbounded allocations.
+const MAX_TRANSPORT_UNCOMPRESSED: usize = 16 * 1024 * 1024 * 1024;
 
 /// Compression mode for the transport format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -125,10 +127,20 @@ pub fn from_transport_bytes(data: &[u8]) -> Result<BlockIndex> {
     ]);
     let payload = &data[HEADER_SIZE..crc_offset];
 
+    let expected_size = usize::try_from(uncompressed_size).map_err(|_| Error::Transport {
+        reason: "uncompressed size exceeds platform address space. Fix: use a 64-bit system or split the index.".to_string(),
+    })?;
+    if expected_size > MAX_TRANSPORT_UNCOMPRESSED {
+        return Err(Error::Transport {
+            reason: format!(
+                "uncompressed size {expected_size} exceeds maximum {MAX_TRANSPORT_UNCOMPRESSED}. Fix: split the index into smaller chunks."
+            ),
+        });
+    }
+
     let raw = match compression {
         0 => payload.to_vec(),
-        #[allow(clippy::cast_possible_truncation)]
-        1 => rle_decompress(payload, uncompressed_size as usize)?,
+        1 => rle_decompress(payload, expected_size)?,
         other => {
             return Err(Error::Transport {
                 reason: format!("unknown compression type {other}"),
@@ -136,11 +148,10 @@ pub fn from_transport_bytes(data: &[u8]) -> Result<BlockIndex> {
         }
     };
 
-    #[allow(clippy::cast_possible_truncation)]
-    if raw.len() != uncompressed_size as usize {
+    if raw.len() != expected_size {
         return Err(Error::Transport {
             reason: format!(
-                "decompressed size mismatch: expected {uncompressed_size}, got {}",
+                "decompressed size mismatch: expected {expected_size}, got {}. Fix: verify the transport data was not truncated or corrupted in transit.",
                 raw.len()
             ),
         });
@@ -185,6 +196,8 @@ pub fn rle_compress(data: &[u8]) -> Vec<u8> {
 
         if run_len >= 4 || (run_len >= 2 && (byte == 0xFF || byte == 0xFE)) {
             // RLE encode
+            // SAFETY: `run_len` is bounded to 65535 by the while loop condition,
+            // so the cast to `u16` never truncates meaningful bits.
             #[allow(clippy::cast_possible_truncation)]
             let count = run_len as u16;
             out.push(0xFF);

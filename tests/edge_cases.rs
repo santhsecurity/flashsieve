@@ -166,11 +166,9 @@ fn remove_suffix_block_succeeds() {
 fn invalid_fpr_values_are_rejected() {
     for bad in [0.0_f64, 1.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
         let result = NgramBloom::with_target_fpr(bad, 100);
-        // We clamped these values instead of returning an error, 
-        // because adversarial_fpr_extreme tests require it to not panic and return Ok.
         assert!(
-            result.is_ok(),
-            "FPR {bad} should be clamped and succeed"
+            result.is_err(),
+            "FPR {bad} is invalid and should be rejected"
         );
     }
 }
