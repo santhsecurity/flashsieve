@@ -441,25 +441,25 @@ fn test_mmap_index_truncated() {
 #[test]
 fn test_bloom_target_fpr_invalid() {
     let res = NgramBloom::with_target_fpr(1.5, 1000);
-    assert!(res.is_ok());
+    assert!(res.is_err(), "FPR >= 1.0 must be rejected");
 }
 
 #[test]
 fn test_bloom_target_fpr_zero() {
     let res = NgramBloom::with_target_fpr(0.0, 1000);
-    assert!(res.is_ok());
+    assert!(res.is_err(), "FPR of 0.0 is mathematically impossible");
 }
 
 #[test]
 fn test_bloom_target_fpr_negative() {
     let res = NgramBloom::with_target_fpr(-0.1, 1000);
-    assert!(res.is_ok());
+    assert!(res.is_err(), "Negative FPR must be rejected");
 }
 
 #[test]
 fn test_bloom_target_fpr_nan() {
     let res = NgramBloom::with_target_fpr(f64::NAN, 1000);
-    assert!(res.is_ok());
+    assert!(res.is_err(), "NaN FPR must be rejected");
 }
 
 #[test]
