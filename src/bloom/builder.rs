@@ -4,6 +4,9 @@ use crate::bloom::filter::{
 use crate::bloom::hash::{hash_pair, hash_to_index, wyhash_pair};
 use crate::error::{Error, Result};
 
+/// Maximum bloom filter bit count to prevent unbounded allocations (128 Mbits = 16 MiB).
+const MAX_BLOOM_BITS: usize = 1 << 30;
+
 impl NgramBloom {
     /// Create a new bloom filter with the specified number of bits.
     ///
@@ -25,6 +28,12 @@ impl NgramBloom {
     pub fn new(num_bits: usize) -> Result<Self> {
         if num_bits == 0 {
             return Err(Error::ZeroBloomBits);
+        }
+        if num_bits > MAX_BLOOM_BITS {
+            return Err(Error::BloomBitsTooLarge {
+                bits: num_bits,
+                max: MAX_BLOOM_BITS,
+            });
         }
 
         // PERF: Enforce power of two allocation to replace hot-path `%` with `&`
@@ -80,7 +89,10 @@ impl NgramBloom {
     /// # Errors
     /// Returns [`Error::ZeroBloomBits`] if the computed bit count is zero.
     pub fn from_block_compact(data: &[u8], block_size: usize) -> Result<Self> {
-        let compact_bits = (block_size / 2).max(64);
+        // For small block sizes, block_size/2 produces a bloom filter so tiny that
+        // the false-positive rate approaches 100 %. Force at least the exact-pair
+        // threshold so the filter remains useful.
+        let compact_bits = (block_size / 2).max(64).max(EXACT_PAIR_THRESHOLD_BITS);
         Self::from_block(data, compact_bits)
     }
 
@@ -107,17 +119,28 @@ impl NgramBloom {
     /// ```
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn with_target_fpr(target_fpr: f64, expected_items: usize) -> Result<Self> {
-        let target_fpr = if !target_fpr.is_finite() || target_fpr >= 1.0 {
-            0.999_999_999_999
-        } else if target_fpr <= 0.0 {
-            1e-100
-        } else {
-            target_fpr
-        };
+        if !target_fpr.is_finite() || target_fpr <= 0.0 || target_fpr >= 1.0 {
+            return Err(Error::InvalidFpr { fpr: target_fpr });
+        }
         let n = (expected_items.max(1)) as f64;
-        let ln2_sq = std::f64::consts::LN_2 * std::f64::consts::LN_2;
-        let raw_bits = -(n * target_fpr.ln()) / ln2_sq;
-        // Truncate safely relying on valid typical raw_bits range
+        // This bloom filter uses a fixed k = 3 hash functions.  The optimal
+        // m formula for k = 3 is:
+        //   m = -3n / ln(1 - p^(1/3))
+        // where p is the target false-positive rate.
+        let p = target_fpr;
+        let root = p.powf(1.0 / 3.0);
+        let denom = (1.0 - root).ln();
+        let raw_bits = if denom == 0.0 {
+            MAX_BLOOM_BITS as f64
+        } else {
+            -(3.0 * n) / denom
+        };
+        if raw_bits > MAX_BLOOM_BITS as f64 {
+            return Err(Error::BloomBitsTooLarge {
+                bits: raw_bits as usize,
+                max: MAX_BLOOM_BITS,
+            });
+        }
         let num_bits = ((raw_bits.ceil() as u64).try_into().unwrap_or(usize::MAX)).max(64);
         Self::new(num_bits)
     }
@@ -234,6 +257,12 @@ impl BlockedNgramBloom {
     pub fn new(num_bits: usize) -> Result<Self> {
         if num_bits == 0 {
             return Err(Error::ZeroBloomBits);
+        }
+        if num_bits > MAX_BLOOM_BITS {
+            return Err(Error::BloomBitsTooLarge {
+                bits: num_bits,
+                max: MAX_BLOOM_BITS,
+            });
         }
 
         let block_count = num_bits

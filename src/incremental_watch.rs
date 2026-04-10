@@ -18,6 +18,9 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+/// Maximum total bytes to index across all modified files in one batch (16 GiB).
+const MAX_TOTAL_INDEX_BYTES: usize = 16 * 1024 * 1024 * 1024;
+
 use crate::builder::BlockIndexBuilder;
 use crate::error::Result;
 use crate::index::BlockIndex;
@@ -123,7 +126,10 @@ impl IncrementalWatch {
     /// Build a block index from only the modified files.
     ///
     /// Reads each modified file, concatenates them, and builds a single block
-    /// index. The caller can then merge this with the existing index.
+    /// index. The resulting index preserves the exact concatenated length; if
+    /// the caller intends to merge it with an existing index, both indexes must
+    /// end on block boundaries or the merge will return
+    /// [`Error::TrailingPartialBlock`](crate::Error::TrailingPartialBlock).
     ///
     /// # Caveats
     ///
@@ -142,14 +148,11 @@ impl IncrementalWatch {
         let mut all_bytes = Vec::new();
         for path in &changes.modified {
             if let Ok(data) = std::fs::read(path) {
+                if all_bytes.len().saturating_add(data.len()) > MAX_TOTAL_INDEX_BYTES {
+                    return Err(crate::error::Error::DataTooLarge);
+                }
                 all_bytes.extend_from_slice(&data);
             }
-        }
-
-        // Pad to block boundary only after all files are concatenated.
-        let remainder = all_bytes.len() % self.config.block_size;
-        if remainder != 0 {
-            all_bytes.resize(all_bytes.len() + self.config.block_size - remainder, 0);
         }
 
         if all_bytes.is_empty() {

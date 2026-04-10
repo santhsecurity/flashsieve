@@ -68,18 +68,9 @@ fn fpr_extremely_high_value() {
 fn fpr_zero() {
     let result = NgramBloom::with_target_fpr(0.0, 1000);
     assert!(
-        result.is_ok(),
-        "FPR = 0.0 should be handled gracefully. Got: {:?}",
+        result.is_err(),
+        "FPR = 0.0 is impossible for a bloom filter and should be rejected. Got: {:?}",
         result
-    );
-
-    // Zero FPR implies infinite bits needed — should clamp to reasonable max
-    let bloom = result.unwrap();
-    let (num_bits, _) = bloom.raw_parts();
-    assert!(
-        num_bits >= 64,
-        "FPR=0 should produce at least 64 bits, got {}",
-        num_bits
     );
 }
 
@@ -88,18 +79,9 @@ fn fpr_zero() {
 fn fpr_one() {
     let result = NgramBloom::with_target_fpr(1.0, 1000);
     assert!(
-        result.is_ok(),
-        "FPR = 1.0 should be handled gracefully. Got: {:?}",
+        result.is_err(),
+        "FPR = 1.0 is meaningless for a bloom filter and should be rejected. Got: {:?}",
         result
-    );
-
-    // FPR = 1.0 implies zero bits needed — should produce minimum
-    let bloom = result.unwrap();
-    let (num_bits, _) = bloom.raw_parts();
-    assert!(
-        num_bits >= 64,
-        "FPR=1.0 should produce at least minimum 64 bits, got {}",
-        num_bits
     );
 }
 

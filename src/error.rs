@@ -139,6 +139,14 @@ pub enum Error {
     /// Input data exceeds the maximum length representable by the platform.
     #[error("input data length exceeds platform limits. Fix: process data in smaller chunks.")]
     DataTooLarge,
+    /// Bloom filter bit count exceeds the supported maximum.
+    #[error("bloom filter bit count {bits} exceeds maximum {max}. Fix: reduce bloom_bits to {max} or fewer.")]
+    BloomBitsTooLarge {
+        /// The requested bit count.
+        bits: usize,
+        /// The maximum supported bit count.
+        max: usize,
+    },
     /// Target false-positive rate is not a valid finite number in (0, 1).
     #[error("target FPR must be a finite number in (0, 1); got {fpr}. Fix: use 0.01, 0.001, etc.")]
     InvalidFpr {

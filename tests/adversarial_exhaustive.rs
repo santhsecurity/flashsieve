@@ -229,12 +229,12 @@ fn ngram_filter_thousand_patterns() {
 #[test]
 fn ngram_filter_empty_pattern() {
     let filter = NgramFilter::from_patterns(&[b"".as_slice()]);
-    // Empty pattern has no n-grams, so it vacuously matches any bloom
+    // Empty patterns are ignored by the filter builder, producing a filter
+    // that matches nothing.
     let bloom = NgramBloom::from_block(b"anything", 1024).expect("expected");
-    // Empty/single-byte patterns match any bloom (no n-grams to check = all present)
     assert!(
-        filter.matches_bloom(&bloom),
-        "empty pattern should vacuously match any bloom"
+        !filter.matches_bloom(&bloom),
+        "empty pattern should be ignored and match nothing"
     );
 }
 

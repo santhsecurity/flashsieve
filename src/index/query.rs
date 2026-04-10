@@ -32,27 +32,21 @@ impl BlockIndex {
     #[must_use]
     pub fn candidate_blocks_byte(&self, filter: &ByteFilter) -> Vec<CandidateRange> {
         let mut results = Vec::new();
-        let mut prev_matches = false;
         for index in 0..self.histograms.len() {
             let h = &self.histograms[index];
             if filter.matches_histogram(h) {
                 if let Some(c) = self.candidate_for_index(index) {
                     results.push(c);
                 }
-                prev_matches = true;
-            } else {
-                if index > 0
-                    && !prev_matches
-                    && filter.matches_histogram_pair(&self.histograms[index - 1], h)
-                {
-                    if let Some(c) = self.candidate_for_index(index - 1) {
-                        results.push(c);
-                    }
-                    if let Some(c) = self.candidate_for_index(index) {
-                        results.push(c);
-                    }
+            } else if index > 0
+                && filter.matches_histogram_pair(&self.histograms[index - 1], h)
+            {
+                if let Some(c) = self.candidate_for_index(index - 1) {
+                    results.push(c);
                 }
-                prev_matches = false;
+                if let Some(c) = self.candidate_for_index(index) {
+                    results.push(c);
+                }
             }
         }
         Self::merge_adjacent(&results)
@@ -88,7 +82,8 @@ impl BlockIndex {
             .max_pattern_bytes()
             .div_ceil(self.block_size)
             .max(1)
-            .saturating_add(1);
+            .saturating_add(1)
+            .min(block_count);
         let mut seen = vec![false; block_count];
 
         for index in 0..block_count {
@@ -184,7 +179,8 @@ impl BlockIndex {
             .max_pattern_bytes()
             .div_ceil(self.block_size)
             .max(1)
-            .saturating_add(1);
+            .saturating_add(1)
+            .min(block_count);
         let mut seen = vec![false; block_count];
 
         for index in 0..block_count {
@@ -220,6 +216,7 @@ impl BlockIndex {
 
             if single_match {
                 seen[index] = true;
+                continue;
             }
 
             if index == 0 {

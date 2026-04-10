@@ -192,7 +192,10 @@ fn compact_bloom_l1_cache_fit() {
     const L1_CACHE_SIZE_BYTES: usize = 32 * 1024; // 32KB typical
 
     let data = b"test data for compact bloom sizing";
-    let block_size = 256;
+    // Use a large enough block size so that block_size/2 exceeds the
+    // exact-pair threshold; otherwise the compact filter falls back to the
+    // threshold size and is not smaller than the standard filter.
+    let block_size = 16_384;
 
     let compact = NgramBloom::from_block_compact(data, block_size).unwrap();
     let (bits, words) = compact.raw_parts();

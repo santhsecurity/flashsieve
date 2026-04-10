@@ -121,9 +121,8 @@ impl BlockIndexBuilder {
         // Allow unaligned data — the last block can be smaller than block_size.
         // Real files are almost never exact multiples of the block size.
         // A partial final block still gets a valid histogram and bloom filter.
-        let block_count = data.len().div_ceil(self.block_size);
-        let mut histograms = Vec::with_capacity(block_count);
-        let mut blooms = Vec::with_capacity(block_count);
+        let mut histograms = Vec::new();
+        let mut blooms = Vec::new();
 
         let mut prev_byte = None;
         for block in data.chunks(self.block_size) {

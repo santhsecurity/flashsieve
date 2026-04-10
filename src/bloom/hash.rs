@@ -150,8 +150,8 @@ mod tests {
         let mut state: u64 = 0x1234_5678_9ABC_DEF0;
         for _ in 0..10_000 {
             state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
-            let a = (state >> 8) as u8;
-            let b = (state >> 24) as u8;
+            let a = ((state >> 8) & 0xFF) as u8;
+            let b = ((state >> 24) & 0xFF) as u8;
             pairs.push((a, b));
         }
 
