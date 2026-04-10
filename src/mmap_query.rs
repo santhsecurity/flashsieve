@@ -186,6 +186,45 @@ impl MmapBlockIndex<'_> {
             }
         }
 
+        // Boundary safety: if block i matches and block i-1 contains any pattern
+        // elements, a pattern might span the boundary.
+        for index in 1..block_count {
+            if seen[index] && !seen[index - 1] {
+                let prev_meta = self.block_metas[index - 1];
+                let prev_histogram = self.block_histogram(prev_meta.offset);
+                let prev_bloom = self.block_bloom(prev_meta);
+                let has_any = if is_paired {
+                    if use_exact {
+                        paired_compact.iter().zip(paired_ngrams).any(|(required_bytes, ngrams)| {
+                            required_bytes.iter().any(|&b| prev_histogram.count(b) > 0)
+                                || ngrams.iter().any(|&(first, second)| {
+                                    prev_bloom.maybe_contains_exact(first, second)
+                                })
+                        })
+                    } else {
+                        paired_compact.iter().zip(paired_ngrams).any(|(required_bytes, ngrams)| {
+                            required_bytes.iter().any(|&b| prev_histogram.count(b) > 0)
+                                || ngrams.iter().any(|&(first, second)| {
+                                    prev_bloom.maybe_contains_bloom(first, second)
+                                })
+                        })
+                    }
+                } else {
+                    byte_filter
+                        .compact_requirements()
+                        .iter()
+                        .any(|required_bytes| {
+                            required_bytes.iter().any(|&b| prev_histogram.count(b) > 0)
+                        })
+                        || (!ngram_filter.union_ngrams().is_empty()
+                            && prev_bloom.maybe_contains_any(ngram_filter.union_ngrams()))
+                };
+                if has_any {
+                    seen[index - 1] = true;
+                }
+            }
+        }
+
         let mut results = Vec::new();
         for (index, is_seen) in seen.into_iter().enumerate() {
             if is_seen {

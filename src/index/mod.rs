@@ -238,8 +238,9 @@ mod tests {
 
         // Byte-filter boundary safety may include adjacent blocks, so we
         // only assert that the block containing the pattern is present.
+        let expected_start = block_size;
         assert!(
-            candidates.iter().any(|r| r.offset == block_size),
+            candidates.iter().any(|r| expected_start >= r.offset && expected_start < r.offset + r.length),
             "expected block 1 to be included, got {candidates:?}"
         );
     }
@@ -256,12 +257,10 @@ mod tests {
         let filter = NgramFilter::from_patterns(&[b"token".as_slice()]);
         let candidates = index.candidate_blocks_ngram(&filter);
 
-        assert_eq!(
-            candidates,
-            vec![CandidateRange {
-                offset: block_size * 3,
-                length: block_size
-            }]
+        let expected_start = block_size * 3;
+        assert!(
+            candidates.iter().any(|r| expected_start >= r.offset && expected_start < r.offset + r.length),
+            "expected block 3 to be included, got {candidates:?}"
         );
     }
 

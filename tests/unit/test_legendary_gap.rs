@@ -60,7 +60,7 @@ fn legendary_gap_pattern_spanning_boundary() {
 fn legendary_gap_high_entropy_fpr() {
     // Generate highly entropic data (simulating compressed/encrypted blocks)
     let block_size = 256;
-    let data: Vec<u8> = (0..block_size).map(|i| (i * 13) as u8).collect();
+    let data: Vec<u8> = (0..block_size).map(|i: usize| i.wrapping_mul(13) as u8).collect();
 
     let index = BlockIndexBuilder::new()
         .block_size(block_size)

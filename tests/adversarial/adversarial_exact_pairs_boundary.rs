@@ -274,17 +274,19 @@ fn exact_pairs_pattern_within_single_block() {
     // Find SECRETKEY= in block 1
     let filter1 = NgramFilter::from_patterns(&[b"SECRETKEY=".as_slice()]);
     let candidates1 = index.candidate_blocks_ngram(&filter1);
+    let expected1 = block_size;
     assert!(
-        candidates1.iter().any(|r| r.offset == block_size),
-        "Should find SECRETKEY= in block 1"
+        candidates1.iter().any(|r| expected1 >= r.offset && expected1 < r.offset + r.length),
+        "Should find SECRETKEY= in block 1, got {candidates1:?}"
     );
 
     // Find API_TOKEN= in block 2
     let filter2 = NgramFilter::from_patterns(&[b"API_TOKEN=".as_slice()]);
     let candidates2 = index.candidate_blocks_ngram(&filter2);
+    let expected2 = block_size * 2;
     assert!(
-        candidates2.iter().any(|r| r.offset == block_size * 2),
-        "Should find API_TOKEN= in block 2"
+        candidates2.iter().any(|r| expected2 >= r.offset && expected2 < r.offset + r.length),
+        "Should find API_TOKEN= in block 2, got {candidates2:?}"
     );
 }
 

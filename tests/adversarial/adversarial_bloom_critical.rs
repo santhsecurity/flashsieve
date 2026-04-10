@@ -117,8 +117,8 @@ fn bloom_hash_collision_boundary_zero_fnr() {
     let mut data = vec![0u8; 1024];
 
     // Fill with data designed to cause collisions
-    for i in 0..data.len() {
-        data[i] = (i % 256) as u8;
+    for (i, item) in data.iter_mut().enumerate() {
+        *item = (i % 256) as u8;
     }
 
     // Place pattern at the beginning
