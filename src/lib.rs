@@ -83,13 +83,14 @@
 //!
 //! # Hash Functions
 //!
-//! The bloom filter uses two independent 64-bit hash functions:
+//! The bloom filter uses a primary 64-bit mix for each 2-byte n-gram and a
+//! derived second hash for double hashing (`k = 3` probes):
 //!
-//! 1. **FNV-1a 64-bit**: Uses official constants from the FNV spec
-//!    - Offset basis: `0xCBF2_9CE4_8422_2325`
-//!    - Prime: `0x0000_0100_0000_01B3`
+//! 1. **wyhash-style mix**: `x = (u64(a) << 8) | u64(b)`, then
+//!    `x = x.wrapping_mul(0x9E37_79B9_7F4A_7C15)`, then `x ^ (x >> 32)`.
 //!
-//! 2. **`SplitMix64` finalizer**: From the `SplitMix64` PRNG paper
+//! 2. **Second hash**: `h2 = (h1 ^ (h1 >> 32)).max(1)` so double hashing never
+//!    uses a zero increment.
 //!
 //! # Safety
 //!
