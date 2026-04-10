@@ -52,3 +52,224 @@ path="tests/scale_suite.rs"
 [[test]]
 name="property_suite"
 path="tests/property_suite.rs"
+
+[[test]]
+name="break_it_suite"
+path="tests/break_it.rs"
+
+[[test]]
+name = "unit_blocked_bloom"
+path = "tests/unit/blocked_bloom.rs"
+
+[[test]]
+name = "unit_bloom"
+path = "tests/unit/bloom.rs"
+
+[[test]]
+name = "unit_bloom_accuracy"
+path = "tests/unit/bloom_accuracy.rs"
+
+[[test]]
+name = "unit_builder"
+path = "tests/unit/builder.rs"
+
+[[test]]
+name = "unit_concurrent_suite"
+path = "tests/unit/concurrent_suite.rs"
+
+[[test]]
+name = "unit_crash_suite"
+path = "tests/unit/crash_suite.rs"
+
+[[test]]
+name = "unit_edge_cases"
+path = "tests/unit/edge_cases.rs"
+
+[[test]]
+name = "unit_end_to_end"
+path = "tests/unit/end_to_end.rs"
+
+[[test]]
+name = "unit_file_bloom_incremental"
+path = "tests/unit/file_bloom_incremental.rs"
+
+[[test]]
+name = "unit_file_bloom_index"
+path = "tests/unit/file_bloom_index.rs"
+
+[[test]]
+name = "unit_filter"
+path = "tests/unit/filter.rs"
+
+[[test]]
+name = "unit_gap_fpr"
+path = "tests/unit/gap_fpr.rs"
+
+[[test]]
+name = "unit_histogram"
+path = "tests/unit/histogram.rs"
+
+[[test]]
+name = "unit_incremental"
+path = "tests/unit/incremental.rs"
+
+[[test]]
+name = "unit_incremental_root_level"
+path = "tests/unit/incremental_root_level.rs"
+
+[[test]]
+name = "unit_internet_scale"
+path = "tests/unit/internet_scale.rs"
+
+[[test]]
+name = "unit_legendary"
+path = "tests/unit/legendary.rs"
+
+[[test]]
+name = "unit_mmap_index"
+path = "tests/unit/mmap_index.rs"
+
+[[test]]
+name = "unit"
+path = "tests/unit/mod.rs"
+
+[[test]]
+name = "unit_oom_test"
+path = "tests/unit/oom_test.rs"
+
+[[test]]
+name = "unit_persistence_roundtrip"
+path = "tests/unit/persistence_roundtrip.rs"
+
+[[test]]
+name = "unit_regression_suite"
+path = "tests/unit/regression_suite.rs"
+
+[[test]]
+name = "unit_scale_suite"
+path = "tests/unit/scale_suite.rs"
+
+[[test]]
+name = "unit_structural_suite"
+path = "tests/unit/structural_suite.rs"
+
+[[test]]
+name = "unit_test_blocked_bloom"
+path = "tests/unit/test_blocked_bloom.rs"
+
+[[test]]
+name = "unit_test_legendary_gap"
+path = "tests/unit/test_legendary_gap.rs"
+
+[[test]]
+name = "unit_test_legendary_unit"
+path = "tests/unit/test_legendary_unit.rs"
+
+[[test]]
+name = "unit_unit_suite"
+path = "tests/unit/unit_suite.rs"
+
+[[test]]
+name = "adversarial_adversarial_bloom"
+path = "tests/adversarial/adversarial_bloom.rs"
+
+[[test]]
+name = "adversarial_adversarial_bloom_correctness"
+path = "tests/adversarial/adversarial_bloom_correctness.rs"
+
+[[test]]
+name = "adversarial_adversarial_bloom_critical"
+path = "tests/adversarial/adversarial_bloom_critical.rs"
+
+[[test]]
+name = "adversarial_adversarial_exact_pairs_boundary"
+path = "tests/adversarial/adversarial_exact_pairs_boundary.rs"
+
+[[test]]
+name = "adversarial_adversarial_exhaustive"
+path = "tests/adversarial/adversarial_exhaustive.rs"
+
+[[test]]
+name = "adversarial_adversarial_fpr_extreme"
+path = "tests/adversarial/adversarial_fpr_extreme.rs"
+
+[[test]]
+name = "adversarial_adversarial_inputs"
+path = "tests/adversarial/adversarial_inputs.rs"
+
+[[test]]
+name = "adversarial_adversarial_suite"
+path = "tests/adversarial/adversarial_suite.rs"
+
+[[test]]
+name = "adversarial_audit_break_it"
+path = "tests/adversarial/audit_break_it.rs"
+
+[[test]]
+name = "adversarial_bloom_collisions"
+path = "tests/adversarial/bloom_collisions.rs"
+
+[[test]]
+name = "adversarial_break_it"
+path = "tests/adversarial/break_it.rs"
+
+[[test]]
+name = "adversarial_concurrent_100_threads"
+path = "tests/adversarial/concurrent_100_threads.rs"
+
+[[test]]
+name = "adversarial_hash_distribution"
+path = "tests/adversarial/hash_distribution.rs"
+
+[[test]]
+name = "adversarial_impossible_conditions"
+path = "tests/adversarial/impossible_conditions.rs"
+
+[[test]]
+name = "adversarial_memory_sizing"
+path = "tests/adversarial/memory_sizing.rs"
+
+[[test]]
+name = "adversarial"
+path = "tests/adversarial/mod.rs"
+
+[[test]]
+name = "adversarial_test_legendary_adversarial"
+path = "tests/adversarial/test_legendary_adversarial.rs"
+
+[[test]]
+name = "adversarial_transport_adversarial"
+path = "tests/adversarial/transport_adversarial.rs"
+
+[[test]]
+name = "integration_integration_suite"
+path = "tests/integration/integration_suite.rs"
+
+[[test]]
+name = "integration"
+path = "tests/integration/mod.rs"
+
+[[test]]
+name = "property_legendary_proptest"
+path = "tests/property/legendary_proptest.rs"
+
+[[test]]
+name = "property"
+path = "tests/property/mod.rs"
+
+[[test]]
+name = "property_property_suite"
+path = "tests/property/property_suite.rs"
+
+[[test]]
+name = "property_proptest_invariants"
+path = "tests/property/proptest_invariants.rs"
+
+[[test]]
+name = "property_test_legendary_property"
+path = "tests/property/test_legendary_property.rs"
+
+[[test]]
+name = "property_zero_fnr"
+path = "tests/property/zero_fnr.rs"
+

@@ -9,6 +9,23 @@
 
 use crate::bloom::NgramBloom;
 use crate::histogram::ByteHistogram;
+use crate::mmap_write::ByteHistogramRef;
+
+pub(crate) trait HistogramView {
+    fn count(&self, byte: u8) -> u32;
+}
+
+impl HistogramView for &ByteHistogram {
+    fn count(&self, byte: u8) -> u32 {
+        ByteHistogram::count(self, byte)
+    }
+}
+
+impl HistogramView for ByteHistogramRef<'_> {
+    fn count(&self, byte: u8) -> u32 {
+        ByteHistogramRef::count(self, byte)
+    }
+}
 
 /// A filter based on required individual bytes.
 ///
@@ -30,10 +47,6 @@ pub struct ByteFilter {
     /// Each inner Vec contains only the byte values that must be present,
     /// avoiding the 256-entry linear scan in the hot path.
     compact_requirements: Vec<Box<[u8]>>,
-    /// Maximum original pattern length in bytes.
-    /// Used to determine how many consecutive blocks must be checked
-    /// to prevent false negatives for patterns spanning block boundaries.
-    max_pattern_bytes: usize,
 }
 
 impl ByteFilter {
@@ -55,7 +68,6 @@ impl ByteFilter {
             required: [false; 256],
             required_count: 0,
             compact_requirements: Vec::new(),
-            max_pattern_bytes: 0,
         }
     }
 
@@ -79,12 +91,10 @@ impl ByteFilter {
     pub fn from_patterns(patterns: &[&[u8]]) -> Self {
         let mut filter = Self::new();
 
-        let mut max_pattern_bytes = 0_usize;
         for &pattern in patterns {
             if pattern.is_empty() {
                 continue;
             }
-            max_pattern_bytes = max_pattern_bytes.max(pattern.len());
             let single = Self::from_single_pattern(pattern);
             for (index, required) in single.required.iter().enumerate() {
                 if *required && !filter.required[index] {
@@ -103,7 +113,6 @@ impl ByteFilter {
                 .into_boxed_slice();
             filter.compact_requirements.push(compact);
         }
-        filter.max_pattern_bytes = max_pattern_bytes;
 
         filter
     }
@@ -145,7 +154,6 @@ impl ByteFilter {
             required,
             required_count,
             compact_requirements: vec![compact],
-            max_pattern_bytes: pattern.len(),
         }
     }
 
@@ -236,9 +244,11 @@ impl ByteFilter {
         &self.compact_requirements
     }
 
-    #[allow(dead_code)]
-    pub(crate) fn max_pattern_bytes(&self) -> usize {
-        self.max_pattern_bytes
+    /// Return true if any required byte from any pattern appears in the histogram.
+    pub(crate) fn has_any_required_byte(&self, histogram: impl HistogramView) -> bool {
+        self.compact_requirements
+            .iter()
+            .any(|required_bytes| required_bytes.iter().any(|&b| histogram.count(b) > 0))
     }
 }
 

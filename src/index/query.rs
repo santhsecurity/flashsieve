@@ -31,19 +31,30 @@ impl BlockIndex {
     /// ```
     #[must_use]
     pub fn candidate_blocks_byte(&self, filter: &ByteFilter) -> Vec<CandidateRange> {
-        let mut results = Vec::new();
-        for index in 0..self.histograms.len() {
+        let block_count = self.histograms.len();
+        let mut seen = vec![false; block_count];
+        for index in 0..block_count {
             let h = &self.histograms[index];
             if filter.matches_histogram(h) {
-                if let Some(c) = self.candidate_for_index(index) {
-                    results.push(c);
-                }
-            } else if index > 0
-                && filter.matches_histogram_pair(&self.histograms[index - 1], h)
-            {
-                if let Some(c) = self.candidate_for_index(index - 1) {
-                    results.push(c);
-                }
+                seen[index] = true;
+                continue;
+            }
+            if index > 0 && filter.matches_histogram_pair(&self.histograms[index - 1], h) {
+                seen[index - 1] = true;
+                seen[index] = true;
+            }
+        }
+        // Boundary safety: if block i matches and block i-1 contains any required
+        // bytes, a pattern might span the boundary.
+        for index in 1..block_count {
+            if seen[index] && !seen[index - 1] && filter.has_any_required_byte(&self.histograms[index - 1]) {
+                seen[index - 1] = true;
+            }
+        }
+
+        let mut results = Vec::new();
+        for (index, is_seen) in seen.into_iter().enumerate() {
+            if is_seen {
                 if let Some(c) = self.candidate_for_index(index) {
                     results.push(c);
                 }
@@ -105,9 +116,12 @@ impl BlockIndex {
                 continue;
             }
 
+            if index == 0 {
+                continue;
+            }
+
             // Pair match with previous block
-            if index > 0 && filter.matches_bloom_pair(&self.blooms[index - 1], &self.blooms[index])
-            {
+            if filter.matches_bloom_pair(&self.blooms[index - 1], &self.blooms[index]) {
                 seen[index - 1] = true;
                 seen[index] = true;
                 continue;
@@ -122,6 +136,17 @@ impl BlockIndex {
                         *item = true;
                     }
                     break;
+                }
+            }
+        }
+
+        // Boundary safety: if block i matches and block i-1 contains any pattern
+        // n-grams, a pattern might span the boundary.
+        let union = filter.union_ngrams();
+        if !union.is_empty() {
+            for index in 1..block_count {
+                if seen[index] && !seen[index - 1] && self.blooms[index - 1].maybe_contains_any(union) {
+                    seen[index - 1] = true;
                 }
             }
         }
@@ -312,6 +337,39 @@ impl BlockIndex {
                         *item = true;
                     }
                     break;
+                }
+            }
+        }
+
+        // Boundary safety: if block i matches and block i-1 contains any pattern
+        // elements, a pattern might span the boundary.
+        for index in 1..block_count {
+            if seen[index] && !seen[index - 1] {
+                let prev_histogram = &self.histograms[index - 1];
+                let prev_bloom = &self.blooms[index - 1];
+                let has_any = if is_paired {
+                    if use_exact {
+                        paired_compact.iter().zip(paired_ngrams).any(|(required_bytes, ngrams)| {
+                            required_bytes.iter().any(|&b| prev_histogram.count(b) > 0)
+                                || ngrams.iter().any(|&(first, second)| {
+                                    prev_bloom.maybe_contains_exact(first, second)
+                                })
+                        })
+                    } else {
+                        paired_compact.iter().zip(paired_ngrams).any(|(required_bytes, ngrams)| {
+                            required_bytes.iter().any(|&b| prev_histogram.count(b) > 0)
+                                || ngrams.iter().any(|&(first, second)| {
+                                    prev_bloom.maybe_contains_bloom(first, second)
+                                })
+                        })
+                    }
+                } else {
+                    byte_filter.has_any_required_byte(prev_histogram)
+                        || (!ngram_filter.union_ngrams().is_empty()
+                            && prev_bloom.maybe_contains_any(ngram_filter.union_ngrams()))
+                };
+                if has_any {
+                    seen[index - 1] = true;
                 }
             }
         }

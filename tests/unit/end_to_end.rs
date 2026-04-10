@@ -30,10 +30,10 @@ fn end_to_end_filtering() {
     let candidates = index.candidate_blocks(&byte_filter, &ngram_filter);
 
     for offset in offsets {
-        let planted_block = offset / block_size;
-        assert!(candidates
-            .iter()
-            .any(|range| range.offset / block_size == planted_block));
+        assert!(
+            candidates.iter().any(|range| range.offset <= offset && offset < range.offset + range.length),
+            "pattern at offset {offset} not found in candidates {candidates:?}"
+        );
     }
 
     assert!(index.selectivity(&candidates) < 0.5);

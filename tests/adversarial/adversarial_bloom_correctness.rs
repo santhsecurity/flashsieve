@@ -224,10 +224,18 @@ fn test_substrings_2() {
 fn test_100_patterns_in_same_block() {
     let mut d = vec![0; 256];
     for i in 0..100 {
-        d[i * 2..i * 2 + 2].copy_from_slice(&[i as u8, (i + 1) as u8]);
+        #[allow(clippy::cast_possible_truncation)]
+        let first: u8 = i as u8;
+        #[allow(clippy::cast_possible_truncation)]
+        let second: u8 = (i + 1) as u8;
+        d[i * 2..i * 2 + 2].copy_from_slice(&[first, second]);
     }
     for i in 0..100 {
-        assert_pattern_found(&d, &[i as u8, (i + 1) as u8], i * 2, 256);
+        #[allow(clippy::cast_possible_truncation)]
+        let first: u8 = i as u8;
+        #[allow(clippy::cast_possible_truncation)]
+        let second: u8 = (i + 1) as u8;
+        assert_pattern_found(&d, &[first, second], i * 2, 256);
     }
 }
 
