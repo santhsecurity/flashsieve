@@ -1,4 +1,11 @@
-#![allow(clippy::cast_precision_loss, clippy::cast_sign_loss, clippy::doc_markdown, clippy::explicit_iter_loop, clippy::uninlined_format_args, clippy::unreadable_literal)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::doc_markdown,
+    clippy::explicit_iter_loop,
+    clippy::uninlined_format_args,
+    clippy::unreadable_literal
+)]
 
 //! CRITICAL adversarial tests for flashsieve bloom filter — designed to BREAK.
 //!

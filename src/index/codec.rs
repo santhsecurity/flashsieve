@@ -4,8 +4,9 @@ use crate::error::Error;
 use crate::histogram::ByteHistogram;
 
 pub(crate) const SERIALIZED_MAGIC: &[u8; 4] = b"FSBX";
-pub(crate) const MAX_SUPPORTED_SERIALIZATION_VERSION: u32 = 2;
+pub(crate) const MAX_SUPPORTED_SERIALIZATION_VERSION: u32 = 3;
 pub(crate) const MIN_SERIALIZED_HEADER_LEN: usize = 4 + 4 + 8 + 8 + 8;
+pub(crate) const MIN_SERIALIZED_HEADER_LEN_V3: usize = MIN_SERIALIZED_HEADER_LEN + 1;
 pub(crate) const SERIALIZED_HISTOGRAM_LEN: usize = 256 * std::mem::size_of::<u32>();
 pub(crate) const SERIALIZED_BLOOM_HEADER_LEN: usize = 8 + 8;
 pub(crate) const MIN_SERIALIZED_BLOCK_LEN: usize =
@@ -24,6 +25,8 @@ pub(crate) struct ParsedIndexHeader {
     pub(crate) total_len: usize,
     pub(crate) block_count: usize,
     pub(crate) payload_end: usize,
+    pub(crate) header_len: usize,
+    pub(crate) last_byte: Option<u8>,
 }
 
 impl BlockIndex {
@@ -57,14 +60,16 @@ impl BlockIndex {
                     + exact_pair_size
             })
             .sum();
-        let total_size = 32 + block_overhead + 4; // +4 for CRC
+        let header_len = MIN_SERIALIZED_HEADER_LEN_V3;
+        let total_size = header_len + block_overhead + SERIALIZED_CRC_LEN;
         let mut buf = Vec::with_capacity(total_size);
         buf.extend_from_slice(b"FSBX");
-        buf.extend_from_slice(&2u32.to_le_bytes());
+        buf.extend_from_slice(&3u32.to_le_bytes());
 
         buf.extend_from_slice(&(self.block_size as u64).to_le_bytes());
         buf.extend_from_slice(&(self.total_len as u64).to_le_bytes());
         buf.extend_from_slice(&(self.histograms.len() as u64).to_le_bytes());
+        buf.push(self.last_byte.unwrap_or(0xFF));
 
         for (histogram, bloom) in self.histograms.iter().zip(&self.blooms) {
             // Bulk-write all 256 counts — avoids 256 individual to_le_bytes calls.
@@ -112,7 +117,7 @@ impl BlockIndex {
     /// block count overflow, truncated block data, or CRC mismatch.
     pub fn from_bytes_checked(data: &[u8]) -> crate::error::Result<Self> {
         let header = parse_serialized_index_header(data)?;
-        let mut offset = 8 + (3 * std::mem::size_of::<u64>());
+        let mut offset = header.header_len;
 
         let mut histograms = Vec::with_capacity(header.block_count);
         let mut blooms = Vec::with_capacity(header.block_count);
@@ -230,6 +235,7 @@ impl BlockIndex {
             total_len: header.total_len,
             histograms,
             blooms,
+            last_byte: header.last_byte,
         })
     }
 
@@ -337,10 +343,22 @@ pub(crate) fn parse_serialized_index_header(
         });
     }
 
-    let payload_end = if version == MAX_SUPPORTED_SERIALIZATION_VERSION {
-        if data.len() < MIN_SERIALIZED_HEADER_LEN + SERIALIZED_CRC_LEN {
+    let header_len = if version >= 3 {
+        MIN_SERIALIZED_HEADER_LEN_V3
+    } else {
+        MIN_SERIALIZED_HEADER_LEN
+    };
+    if data.len() < header_len {
+        return Err(Error::TruncatedHeader {
+            expected: header_len,
+            got: data.len(),
+        });
+    }
+
+    let payload_end = if version >= 2 {
+        if data.len() < header_len + SERIALIZED_CRC_LEN {
             return Err(Error::TruncatedHeader {
-                expected: MIN_SERIALIZED_HEADER_LEN + SERIALIZED_CRC_LEN,
+                expected: header_len + SERIALIZED_CRC_LEN,
                 got: data.len(),
             });
         }
@@ -372,8 +390,18 @@ pub(crate) fn parse_serialized_index_header(
     let block_count_raw = read_u64_le_checked(data, &mut offset)?;
     let block_count = usize::try_from(block_count_raw).unwrap_or(usize::MAX);
 
-    let max_plausible =
-        payload_end.saturating_sub(MIN_SERIALIZED_HEADER_LEN) / MIN_SERIALIZED_BLOCK_LEN;
+    let last_byte = if version >= 3 {
+        let byte = data[offset];
+        if byte == 0xFF {
+            None
+        } else {
+            Some(byte)
+        }
+    } else {
+        None
+    };
+
+    let max_plausible = payload_end.saturating_sub(header_len) / MIN_SERIALIZED_BLOCK_LEN;
     if block_count > max_plausible {
         return Err(Error::BlockCountOverflow {
             claimed: block_count_raw,
@@ -386,6 +414,8 @@ pub(crate) fn parse_serialized_index_header(
         total_len,
         block_count,
         payload_end,
+        header_len,
+        last_byte,
     })
 }
 

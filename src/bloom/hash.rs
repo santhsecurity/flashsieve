@@ -69,13 +69,16 @@ pub(crate) fn hash_pair(a: u8, b: u8) -> (u64, u64) {
 #[inline(always)]
 #[allow(clippy::cast_possible_truncation)]
 pub(crate) fn hash_to_index(hash: u64, num_bits: usize) -> usize {
-    debug_assert!(
-        (num_bits as u64).is_power_of_two(),
-        "hash_to_index: num_bits must be a power of two, got {num_bits}"
-    );
-    // SAFETY: (hash & ((num_bits as u64) - 1)) is at most num_bits - 1, which fits in usize
-    // because num_bits is usize.
-    (hash & ((num_bits as u64).wrapping_sub(1))) as usize
+    if num_bits == 0 {
+        return 0;
+    }
+    let num_bits_u64 = num_bits as u64;
+    if num_bits_u64.is_power_of_two() {
+        (hash & num_bits_u64.wrapping_sub(1)) as usize
+    } else {
+        // Safe fallback for non-power-of-two using modulo.
+        (hash % num_bits_u64) as usize
+    }
 }
 
 #[cfg(test)]

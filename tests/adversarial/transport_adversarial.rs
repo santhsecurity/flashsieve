@@ -1,4 +1,10 @@
-#![allow(clippy::cast_precision_loss, clippy::doc_markdown, clippy::explicit_iter_loop, clippy::uninlined_format_args, clippy::unreadable_literal)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::doc_markdown,
+    clippy::explicit_iter_loop,
+    clippy::uninlined_format_args,
+    clippy::unreadable_literal
+)]
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
 //! Adversarial tests for transport serialization and incremental watching.
@@ -6,10 +12,10 @@
 //! These tests are designed to break the implementation: pathological inputs,
 //! exhaustive truncation, concurrent races, and CRC collision resistance.
 
+use flashsieve::incremental_watch::{IncrementalWatch, WatchConfig};
 use flashsieve::transport::{
     from_transport_bytes, rle_compress, rle_decompress, to_transport_bytes,
 };
-use flashsieve::incremental_watch::{IncrementalWatch, WatchConfig};
 use flashsieve::{BlockIndex, BlockIndexBuilder, ByteHistogram, NgramBloom};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -50,13 +56,18 @@ fn transport_round_trip_maximum_size_index() {
 /// and that the compressed payload is at least 1.5x the raw data.
 #[test]
 fn rle_pathological_alternating_ff_00() {
-    let data: Vec<u8> = (0..10_000).map(|i| if i % 2 == 0 { 0xFF } else { 0x00 }).collect();
+    let data: Vec<u8> = (0..10_000)
+        .map(|i| if i % 2 == 0 { 0xFF } else { 0x00 })
+        .collect();
 
     let compressed = rle_compress(&data);
     let decompressed = rle_decompress(&compressed, data.len()).unwrap();
 
     // Exact round-trip is mandatory
-    assert_eq!(data, decompressed, "RLE round-trip corrupted pathological data");
+    assert_eq!(
+        data, decompressed,
+        "RLE round-trip corrupted pathological data"
+    );
 
     // Pathological input must expand: each 0xFF turns into a 4-byte escape
     // and each 0x00 is a 1-byte literal. Expected expansion factor is ~2.5x.

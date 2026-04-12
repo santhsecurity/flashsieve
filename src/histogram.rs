@@ -72,19 +72,31 @@ impl ByteHistogram {
         let chunks = data.chunks_exact(4);
         let remainder = chunks.remainder();
         for chunk in chunks {
-            h0[usize::from(chunk[0])] += 1;
-            h1[usize::from(chunk[1])] += 1;
-            h2[usize::from(chunk[2])] += 1;
-            h3[usize::from(chunk[3])] += 1;
+            h0[usize::from(chunk[0])] = h0[usize::from(chunk[0])].saturating_add(1);
+            h1[usize::from(chunk[1])] = h1[usize::from(chunk[1])].saturating_add(1);
+            h2[usize::from(chunk[2])] = h2[usize::from(chunk[2])].saturating_add(1);
+            h3[usize::from(chunk[3])] = h3[usize::from(chunk[3])].saturating_add(1);
         }
 
         // Handle tail bytes (0-3 remaining).
         for (i, &byte) in remainder.iter().enumerate() {
             match i {
-                0 => h0[usize::from(byte)] += 1,
-                1 => h1[usize::from(byte)] += 1,
-                2 => h2[usize::from(byte)] += 1,
-                _ => h3[usize::from(byte)] += 1,
+                0 => {
+                    let idx = usize::from(byte);
+                    h0[idx] = h0[idx].saturating_add(1);
+                }
+                1 => {
+                    let idx = usize::from(byte);
+                    h1[idx] = h1[idx].saturating_add(1);
+                }
+                2 => {
+                    let idx = usize::from(byte);
+                    h2[idx] = h2[idx].saturating_add(1);
+                }
+                _ => {
+                    let idx = usize::from(byte);
+                    h3[idx] = h3[idx].saturating_add(1);
+                }
             }
         }
 

@@ -91,7 +91,6 @@ impl NgramBloom {
 
     #[must_use]
     #[inline(always)]
-    #[allow(unsafe_code)]
     pub(crate) fn maybe_contains_exact_with(
         exact_pairs: &[u64; EXACT_PAIR_WORDS],
         a: u8,
@@ -100,22 +99,15 @@ impl NgramBloom {
         let pair = (usize::from(a) << 8) | usize::from(b);
         let word_index = pair >> 6;
         let bit_offset = pair & 63;
-        // SAFETY: pair is at most 0xFFFF (u8 << 8 | u8), so word_index <= 0xFFFF >> 6 = 1023.
-        // EXACT_PAIR_WORDS = 65536 / 64 = 1024, so word_index < EXACT_PAIR_WORDS. Always in bounds.
-        (unsafe { *exact_pairs.get_unchecked(word_index) } & (1_u64 << bit_offset)) != 0
+        (exact_pairs[word_index] & (1_u64 << bit_offset)) != 0
     }
 
     #[must_use]
     #[inline(always)]
-    #[allow(unsafe_code)]
     fn word_contains(&self, bit_index: usize) -> bool {
         let word = bit_index >> 6; // / 64
         let bit_offset = bit_index & 63; // % 64
-                                         // SAFETY: `bit_index` is masked with `self.bit_index_mask`, so it is in
-                                         // `0..self.num_bits`. `self.bits` is allocated with `self.num_bits.div_ceil(64)`
-                                         // words, which guarantees `word < self.bits.len()`.
-        let bits = unsafe { *self.bits.get_unchecked(word) };
-        (bits & (1_u64 << bit_offset)) != 0
+        (self.bits[word] & (1_u64 << bit_offset)) != 0
     }
 
     /// Check if all n-grams from a pattern might be present.
@@ -254,16 +246,7 @@ impl BlockedNgramBloom {
         let block = &self.blocks[block_index];
         let (h1, h2) = hash_pair(a, b);
 
-        // Prefetch next block for cache locality in sequential scans
-        #[cfg(target_arch = "x86_64")]
-        if block_index + 1 < self.num_blocks {
-            let next_ptr = self.blocks[block_index + 1].as_ptr().cast::<i8>();
-            // SAFETY: ptr is valid for the slice length. _mm_prefetch doesn't fault.
-            #[allow(unsafe_code)]
-            unsafe {
-                core::arch::x86_64::_mm_prefetch(next_ptr, core::arch::x86_64::_MM_HINT_T0);
-            };
-        }
+        // Prefetch removed to keep the crate fully safe.
 
         (0..3u64).all(|probe| {
             let bit_index = h1
@@ -300,21 +283,10 @@ impl BlockedNgramBloom {
         }
 
         // Software pipelining: prefetch blocks ahead
-        ngrams.iter().enumerate().all(|(i, &(a, b))| {
+        ngrams.iter().enumerate().all(|(_i, &(a, b))| {
             let block_index = hash_to_index(wyhash_pair(a, b), self.num_blocks);
 
-            // Prefetch block 4 lookups ahead for cache efficiency
-            #[cfg(target_arch = "x86_64")]
-            if i + 4 < ngrams.len() {
-                let future_pair = ngrams[i + 4];
-                let future_idx =
-                    hash_to_index(wyhash_pair(future_pair.0, future_pair.1), self.num_blocks);
-                let ptr = self.blocks[future_idx].as_ptr().cast::<i8>();
-                #[allow(unsafe_code)]
-                unsafe {
-                    core::arch::x86_64::_mm_prefetch(ptr, core::arch::x86_64::_MM_HINT_T0);
-                };
-            }
+            // Prefetch removed to keep the crate fully safe.
 
             let block = &self.blocks[block_index];
             let (h1, h2) = hash_pair(a, b);

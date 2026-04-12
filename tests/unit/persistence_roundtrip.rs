@@ -1,4 +1,10 @@
-#![allow(clippy::cast_precision_loss, clippy::doc_markdown, clippy::explicit_iter_loop, clippy::uninlined_format_args, clippy::unreadable_literal)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::doc_markdown,
+    clippy::explicit_iter_loop,
+    clippy::uninlined_format_args,
+    clippy::unreadable_literal
+)]
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
 use flashsieve::{
@@ -26,7 +32,11 @@ fn block_index_round_trip_preserves_queries() {
     assert_eq!(original.block_count(), recovered.block_count());
     assert_eq!(original.total_data_length(), recovered.total_data_length());
 
-    for pattern in [b"secret".as_slice(), b"token".as_slice(), b"missing".as_slice()] {
+    for pattern in [
+        b"secret".as_slice(),
+        b"token".as_slice(),
+        b"missing".as_slice(),
+    ] {
         let bf = ByteFilter::from_patterns(&[pattern]);
         let nf = NgramFilter::from_patterns(&[pattern]);
         assert_eq!(

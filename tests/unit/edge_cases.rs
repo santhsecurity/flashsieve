@@ -1,10 +1,16 @@
 #![allow(clippy::pedantic)]
-#![allow(clippy::cast_precision_loss, clippy::doc_markdown, clippy::explicit_iter_loop, clippy::uninlined_format_args, clippy::unreadable_literal)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::doc_markdown,
+    clippy::explicit_iter_loop,
+    clippy::uninlined_format_args,
+    clippy::unreadable_literal
+)]
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
 use flashsieve::{
-    BlockIndexBuilder, ByteFilter, ByteHistogram, FileBloomIndex, IncrementalBuilder,
-    NgramBloom, NgramFilter,
+    BlockIndexBuilder, ByteFilter, ByteHistogram, FileBloomIndex, IncrementalBuilder, NgramBloom,
+    NgramFilter,
 };
 
 /// Empty data should produce an index with zero blocks.
@@ -18,7 +24,10 @@ fn empty_data_yields_zero_blocks() {
 /// A single byte has no 2-byte n-grams, so the bloom filter is empty but valid.
 #[test]
 fn single_byte_block() {
-    let index = BlockIndexBuilder::new().block_size(256).build(b"x").unwrap();
+    let index = BlockIndexBuilder::new()
+        .block_size(256)
+        .build(b"x")
+        .unwrap();
     assert_eq!(index.block_count(), 1);
 
     let bf = ByteFilter::from_patterns(&[b"x".as_slice()]);
@@ -31,7 +40,10 @@ fn single_byte_block() {
 #[test]
 fn all_identical_bytes() {
     let data = vec![b'a'; 1024];
-    let index = BlockIndexBuilder::new().block_size(256).build(&data).unwrap();
+    let index = BlockIndexBuilder::new()
+        .block_size(256)
+        .build(&data)
+        .unwrap();
     assert_eq!(index.block_count(), 4);
 
     let bf = ByteFilter::from_patterns(&[b"aa".as_slice()]);
@@ -61,7 +73,10 @@ fn pattern_longer_than_block_size() {
     let bf = ByteFilter::from_patterns(&[pattern.as_slice()]);
     let nf = NgramFilter::from_patterns(&[pattern.as_slice()]);
     let candidates = index.candidate_blocks(&bf, &nf);
-    assert!(!candidates.is_empty(), "long pattern should produce candidates");
+    assert!(
+        !candidates.is_empty(),
+        "long pattern should produce candidates"
+    );
 }
 
 /// Empty pattern list should produce filters that reject everything.
@@ -82,7 +97,10 @@ fn empty_patterns_never_match() {
 #[test]
 fn minimum_block_size() {
     let data = vec![0u8; 256];
-    let index = BlockIndexBuilder::new().block_size(256).build(&data).unwrap();
+    let index = BlockIndexBuilder::new()
+        .block_size(256)
+        .build(&data)
+        .unwrap();
     assert_eq!(index.block_count(), 1);
 }
 
@@ -90,7 +108,10 @@ fn minimum_block_size() {
 #[test]
 fn unaligned_data_length() {
     let data = vec![0u8; 513]; // 2 full 256-byte blocks + 1 byte
-    let index = BlockIndexBuilder::new().block_size(256).build(&data).unwrap();
+    let index = BlockIndexBuilder::new()
+        .block_size(256)
+        .build(&data)
+        .unwrap();
     assert_eq!(index.block_count(), 3);
     assert_eq!(index.total_data_length(), 513);
 }
@@ -110,10 +131,7 @@ fn histogram_saturates_u32_max() {
 fn file_bloom_requires_at_least_one_block() {
     let index = BlockIndexBuilder::new().block_size(256).build(b"").unwrap();
     let result = FileBloomIndex::try_new(index);
-    assert!(matches!(
-        result,
-        Err(flashsieve::Error::EmptyBlockIndex)
-    ));
+    assert!(matches!(result, Err(flashsieve::Error::EmptyBlockIndex)));
 }
 
 /// Incremental append to an index built from unaligned data should fail

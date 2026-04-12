@@ -1,4 +1,10 @@
-#![allow(clippy::cast_precision_loss, clippy::doc_markdown, clippy::explicit_iter_loop, clippy::uninlined_format_args, clippy::unreadable_literal)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::doc_markdown,
+    clippy::explicit_iter_loop,
+    clippy::uninlined_format_args,
+    clippy::unreadable_literal
+)]
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
 use flashsieve::{BlockIndexBuilder, ByteFilter, NgramBloom, NgramFilter};
@@ -52,9 +58,9 @@ fn patterns_at_exact_block_boundaries() {
     for &offset in &[offset1, offset2] {
         let expected_start = (offset / block_size) * block_size;
         assert!(
-            candidates.iter().any(|r| {
-                expected_start >= r.offset && expected_start < r.offset + r.length
-            }),
+            candidates
+                .iter()
+                .any(|r| { expected_start >= r.offset && expected_start < r.offset + r.length }),
             "pattern at offset {offset} not found in candidates {candidates:?}"
         );
     }
@@ -118,12 +124,7 @@ fn collision_resistance_shared_byte_set() {
         .unwrap();
 
     // All patterns use the exact same bytes, but only one is present
-    let patterns: Vec<&[u8]> = vec![
-        b"abcde",
-        b"edcba",
-        b"aebcd",
-        b"badce",
-    ];
+    let patterns: Vec<&[u8]> = vec![b"abcde", b"edcba", b"aebcd", b"badce"];
 
     let bf = ByteFilter::from_patterns(&patterns);
     let nf = NgramFilter::from_patterns(&patterns);
