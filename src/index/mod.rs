@@ -72,6 +72,7 @@ pub struct BlockIndex {
     pub(crate) total_len: usize,
     pub(crate) histograms: Vec<ByteHistogram>,
     pub(crate) blooms: Vec<NgramBloom>,
+    pub(crate) last_byte: Option<u8>,
 }
 
 impl BlockIndex {
@@ -97,6 +98,17 @@ impl BlockIndex {
         histograms: Vec<ByteHistogram>,
         blooms: Vec<NgramBloom>,
     ) -> Self {
+        Self::new_with_last_byte(block_size, total_len, histograms, blooms, None)
+    }
+
+    #[must_use]
+    pub(crate) fn new_with_last_byte(
+        block_size: usize,
+        total_len: usize,
+        histograms: Vec<ByteHistogram>,
+        blooms: Vec<NgramBloom>,
+        last_byte: Option<u8>,
+    ) -> Self {
         let bloom_bits = blooms.first().map_or(0, |bloom| bloom.raw_parts().0);
         Self {
             block_size,
@@ -104,6 +116,7 @@ impl BlockIndex {
             total_len,
             histograms,
             blooms,
+            last_byte,
         }
     }
 
@@ -240,7 +253,9 @@ mod tests {
         // only assert that the block containing the pattern is present.
         let expected_start = block_size;
         assert!(
-            candidates.iter().any(|r| expected_start >= r.offset && expected_start < r.offset + r.length),
+            candidates
+                .iter()
+                .any(|r| expected_start >= r.offset && expected_start < r.offset + r.length),
             "expected block 1 to be included, got {candidates:?}"
         );
     }
@@ -259,7 +274,9 @@ mod tests {
 
         let expected_start = block_size * 3;
         assert!(
-            candidates.iter().any(|r| expected_start >= r.offset && expected_start < r.offset + r.length),
+            candidates
+                .iter()
+                .any(|r| expected_start >= r.offset && expected_start < r.offset + r.length),
             "expected block 3 to be included, got {candidates:?}"
         );
     }

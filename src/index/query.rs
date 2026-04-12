@@ -47,7 +47,10 @@ impl BlockIndex {
         // Boundary safety: if block i matches and block i-1 contains any required
         // bytes, a pattern might span the boundary.
         for index in 1..block_count {
-            if seen[index] && !seen[index - 1] && filter.has_any_required_byte(&self.histograms[index - 1]) {
+            if seen[index]
+                && !seen[index - 1]
+                && filter.has_any_required_byte(&self.histograms[index - 1])
+            {
                 seen[index - 1] = true;
             }
         }
@@ -98,18 +101,6 @@ impl BlockIndex {
         let mut seen = vec![false; block_count];
 
         for index in 0..block_count {
-            #[cfg(target_arch = "x86_64")]
-            if let Some(next_bloom) = self.blooms.get(index + 1) {
-                if !next_bloom.bits.is_empty() {
-                    let ptr = next_bloom.bits.as_ptr().cast::<i8>();
-                    // SAFETY: ptr is valid for the slice length. _mm_prefetch doesn't fault.
-                    #[allow(unsafe_code)]
-                    unsafe {
-                        core::arch::x86_64::_mm_prefetch(ptr, core::arch::x86_64::_MM_HINT_T0);
-                    };
-                }
-            }
-
             // Single block match
             if filter.matches_bloom(&self.blooms[index]) {
                 seen[index] = true;
@@ -145,7 +136,10 @@ impl BlockIndex {
         let union = filter.union_ngrams();
         if !union.is_empty() {
             for index in 1..block_count {
-                if seen[index] && !seen[index - 1] && self.blooms[index - 1].maybe_contains_any(union) {
+                if seen[index]
+                    && !seen[index - 1]
+                    && self.blooms[index - 1].maybe_contains_any(union)
+                {
                     seen[index - 1] = true;
                 }
             }
@@ -347,27 +341,32 @@ impl BlockIndex {
             if seen[index] && !seen[index - 1] {
                 let prev_histogram = &self.histograms[index - 1];
                 let prev_bloom = &self.blooms[index - 1];
-                let has_any = if is_paired {
-                    if use_exact {
-                        paired_compact.iter().zip(paired_ngrams).any(|(required_bytes, ngrams)| {
-                            required_bytes.iter().any(|&b| prev_histogram.count(b) > 0)
-                                || ngrams.iter().any(|&(first, second)| {
-                                    prev_bloom.maybe_contains_exact(first, second)
-                                })
-                        })
+                let has_any =
+                    if is_paired {
+                        if use_exact {
+                            paired_compact.iter().zip(paired_ngrams).any(
+                                |(required_bytes, ngrams)| {
+                                    required_bytes.iter().any(|&b| prev_histogram.count(b) > 0)
+                                        || ngrams.iter().any(|&(first, second)| {
+                                            prev_bloom.maybe_contains_exact(first, second)
+                                        })
+                                },
+                            )
+                        } else {
+                            paired_compact.iter().zip(paired_ngrams).any(
+                                |(required_bytes, ngrams)| {
+                                    required_bytes.iter().any(|&b| prev_histogram.count(b) > 0)
+                                        || ngrams.iter().any(|&(first, second)| {
+                                            prev_bloom.maybe_contains_bloom(first, second)
+                                        })
+                                },
+                            )
+                        }
                     } else {
-                        paired_compact.iter().zip(paired_ngrams).any(|(required_bytes, ngrams)| {
-                            required_bytes.iter().any(|&b| prev_histogram.count(b) > 0)
-                                || ngrams.iter().any(|&(first, second)| {
-                                    prev_bloom.maybe_contains_bloom(first, second)
-                                })
-                        })
-                    }
-                } else {
-                    byte_filter.has_any_required_byte(prev_histogram)
-                        || (!ngram_filter.union_ngrams().is_empty()
-                            && prev_bloom.maybe_contains_any(ngram_filter.union_ngrams()))
-                };
+                        byte_filter.has_any_required_byte(prev_histogram)
+                            || (!ngram_filter.union_ngrams().is_empty()
+                                && prev_bloom.maybe_contains_any(ngram_filter.union_ngrams()))
+                    };
                 if has_any {
                     seen[index - 1] = true;
                 }

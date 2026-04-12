@@ -1,4 +1,5 @@
 #![allow(clippy::cast_possible_truncation)]
+#![deny(unsafe_code)]
 //! Storage-level pre-filtering for pattern matching.
 //!
 //! `flashsieve` builds per-block byte histograms and 2-byte n-gram bloom
@@ -117,10 +118,7 @@
     clippy::missing_errors_doc,
     clippy::too_many_lines
 )]
-#![cfg_attr(
-    test,
-    allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)
-)]
+#![cfg_attr(test, allow(clippy::expect_used, clippy::panic, clippy::unwrap_used))]
 #![deny(unsafe_code)]
 
 /// Bloom filter primitives for block-level 2-byte n-gram summaries.
@@ -144,10 +142,10 @@ pub mod incremental;
 pub mod incremental_watch;
 /// Indexed block metadata and candidate range queries.
 pub mod index;
-mod mmap_query;
-mod mmap_write;
 /// Zero-parse views over serialized block-index data.
 pub mod mmap_index;
+mod mmap_query;
+mod mmap_write;
 /// Compressed transport format for peer-to-peer bloom index sharing.
 pub mod transport;
 

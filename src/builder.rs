@@ -137,11 +137,13 @@ impl BlockIndexBuilder {
             blooms.push(bloom);
         }
 
-        Ok(BlockIndex::new(
+        let last_byte = data.last().copied();
+        Ok(BlockIndex::new_with_last_byte(
             self.block_size,
             data.len(),
             histograms,
             blooms,
+            last_byte,
         ))
     }
 
@@ -188,7 +190,9 @@ impl BlockIndexBuilder {
                     block_size: self.block_size,
                 });
             }
-            total_len += block.len();
+            total_len = total_len
+                .checked_add(block.len())
+                .ok_or(Error::DataTooLarge)?;
             histograms.push(ByteHistogram::from_block(&block));
             let mut bloom = NgramBloom::from_block(&block, self.bloom_bits)?;
             if let Some(b) = prev_byte {
@@ -200,11 +204,13 @@ impl BlockIndexBuilder {
             blooms.push(bloom);
         }
 
-        Ok(BlockIndex::new(
+        let last_byte = prev_byte;
+        Ok(BlockIndex::new_with_last_byte(
             self.block_size,
             total_len,
             histograms,
             blooms,
+            last_byte,
         ))
     }
 }

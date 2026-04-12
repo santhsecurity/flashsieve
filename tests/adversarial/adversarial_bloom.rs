@@ -1,5 +1,11 @@
 #![allow(clippy::pedantic)]
-#![allow(clippy::cast_precision_loss, clippy::doc_markdown, clippy::explicit_iter_loop, clippy::uninlined_format_args, clippy::unreadable_literal)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::doc_markdown,
+    clippy::explicit_iter_loop,
+    clippy::uninlined_format_args,
+    clippy::unreadable_literal
+)]
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
 use flashsieve::{BlockIndexBuilder, ByteFilter, NgramFilter};
@@ -47,7 +53,7 @@ fn assert_pattern_found(data: &[u8], pattern: &[u8], offset: usize, block_size: 
 fn assert_n_patterns_soundness(n: usize, seed: u8) {
     let block_size = 4096;
     let mut data = vec![0u8; block_size];
-    
+
     // Fill block with N 2-byte patterns
     let mut offset = 0;
     for i in 0..n {
@@ -58,7 +64,7 @@ fn assert_n_patterns_soundness(n: usize, seed: u8) {
         data[offset + 1] = seed.wrapping_add(((i / 256) % 256) as u8);
         offset += 2;
     }
-    
+
     let index = BlockIndexBuilder::new()
         .block_size(block_size)
         .bloom_bits(1024)
@@ -69,44 +75,67 @@ fn assert_n_patterns_soundness(n: usize, seed: u8) {
         let p0 = seed.wrapping_add((i % 256) as u8);
         let p1 = seed.wrapping_add(((i / 256) % 256) as u8);
         let pattern = [p0, p1];
-        
+
         let byte_filter = ByteFilter::from_patterns(&[&pattern]);
         let ngram_filter = NgramFilter::from_patterns(&[&pattern]);
 
         let candidates = index.candidate_blocks(&byte_filter, &ngram_filter);
-        assert!(!candidates.is_empty(), "Pattern {i} not found (soundness violation)");
+        assert!(
+            !candidates.is_empty(),
+            "Pattern {i} not found (soundness violation)"
+        );
     }
 }
 
 #[test]
-fn test_soundness_insert_1() { assert_n_patterns_soundness(10, 1); }
+fn test_soundness_insert_1() {
+    assert_n_patterns_soundness(10, 1);
+}
 
 #[test]
-fn test_soundness_insert_2() { assert_n_patterns_soundness(50, 2); }
+fn test_soundness_insert_2() {
+    assert_n_patterns_soundness(50, 2);
+}
 
 #[test]
-fn test_soundness_insert_3() { assert_n_patterns_soundness(100, 3); }
+fn test_soundness_insert_3() {
+    assert_n_patterns_soundness(100, 3);
+}
 
 #[test]
-fn test_soundness_insert_4() { assert_n_patterns_soundness(200, 4); }
+fn test_soundness_insert_4() {
+    assert_n_patterns_soundness(200, 4);
+}
 
 #[test]
-fn test_soundness_insert_5() { assert_n_patterns_soundness(300, 5); }
+fn test_soundness_insert_5() {
+    assert_n_patterns_soundness(300, 5);
+}
 
 #[test]
-fn test_soundness_insert_6() { assert_n_patterns_soundness(400, 6); }
+fn test_soundness_insert_6() {
+    assert_n_patterns_soundness(400, 6);
+}
 
 #[test]
-fn test_soundness_insert_7() { assert_n_patterns_soundness(500, 7); }
+fn test_soundness_insert_7() {
+    assert_n_patterns_soundness(500, 7);
+}
 
 #[test]
-fn test_soundness_insert_8() { assert_n_patterns_soundness(600, 8); }
+fn test_soundness_insert_8() {
+    assert_n_patterns_soundness(600, 8);
+}
 
 #[test]
-fn test_soundness_insert_9() { assert_n_patterns_soundness(700, 9); }
+fn test_soundness_insert_9() {
+    assert_n_patterns_soundness(700, 9);
+}
 
 #[test]
-fn test_soundness_insert_10() { assert_n_patterns_soundness(800, 10); }
+fn test_soundness_insert_10() {
+    assert_n_patterns_soundness(800, 10);
+}
 
 // 11-15: Patterns at exact block size boundaries (4096, 8192)
 #[test]
@@ -228,7 +257,7 @@ fn test_content_25_random_bytes() {
 fn assert_high_fill_ratio(num_patterns: usize, start_id: usize) {
     let block_size = 65536; // large block to fit 10k 2-byte patterns
     let mut data = vec![0u8; block_size];
-    
+
     // Fill a single block with many unique 2-byte patterns
     let mut offset = 0;
     let mut i = 0;
@@ -239,11 +268,11 @@ fn assert_high_fill_ratio(num_patterns: usize, start_id: usize) {
         offset += 2;
         i += 1;
     }
-    
+
     let index = BlockIndexBuilder::new()
         .block_size(block_size)
         // deliberately small filter for high fill (128 bits = 16 bytes, extremely small for 10k elements)
-        .bloom_bits(128) 
+        .bloom_bits(128)
         .build(&data)
         .unwrap();
 
@@ -251,12 +280,15 @@ fn assert_high_fill_ratio(num_patterns: usize, start_id: usize) {
     while i * 2 < block_size - 1 && i < num_patterns {
         let val = (start_id + i) as u16;
         let pattern = [(val & 0xFF) as u8, ((val >> 8) & 0xFF) as u8];
-        
+
         let byte_filter = ByteFilter::from_patterns(&[&pattern]);
         let ngram_filter = NgramFilter::from_patterns(&[&pattern]);
 
         let candidates = index.candidate_blocks(&byte_filter, &ngram_filter);
-        assert!(!candidates.is_empty(), "Pattern {i} not found in high fill block");
+        assert!(
+            !candidates.is_empty(),
+            "Pattern {i} not found in high fill block"
+        );
         i += 1;
     }
 }
@@ -290,7 +322,7 @@ fn test_high_fill_30() {
 #[test]
 fn test_empty_query_31_empty_pattern() {
     let data = vec![0u8; 1024];
-    
+
     let index = BlockIndexBuilder::new()
         .block_size(256)
         .bloom_bits(1024)
@@ -309,7 +341,7 @@ fn test_empty_query_31_empty_pattern() {
 #[test]
 fn test_empty_query_32_empty_data_nonempty_pattern() {
     let data = vec![0u8; 0];
-    
+
     let index = BlockIndexBuilder::new()
         .block_size(256)
         .bloom_bits(1024)
@@ -320,13 +352,16 @@ fn test_empty_query_32_empty_data_nonempty_pattern() {
     let ngram_filter = NgramFilter::from_patterns(&[b"TEST"]);
 
     let candidates = index.candidate_blocks(&byte_filter, &ngram_filter);
-    assert!(candidates.is_empty(), "Empty data should have no candidates");
+    assert!(
+        candidates.is_empty(),
+        "Empty data should have no candidates"
+    );
 }
 
 #[test]
 fn test_empty_query_33_empty_data_empty_pattern() {
     let data = vec![0u8; 0];
-    
+
     let index = BlockIndexBuilder::new()
         .block_size(256)
         .bloom_bits(1024)
@@ -339,6 +374,3 @@ fn test_empty_query_33_empty_data_empty_pattern() {
     let candidates = index.candidate_blocks(&byte_filter, &ngram_filter);
     assert!(candidates.is_empty());
 }
-
-
-

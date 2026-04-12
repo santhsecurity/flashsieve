@@ -39,13 +39,13 @@ pub enum Compression {
 ///
 /// Uses run-length encoding by default, which provides 3-5x compression
 /// on typical bloom filter data.
-#[must_use] 
+#[must_use]
 pub fn to_transport_bytes(index: &BlockIndex) -> Vec<u8> {
     to_transport_bytes_with(index, Compression::RunLength)
 }
 
 /// Serialize a `BlockIndex` with explicit compression mode.
-#[must_use] 
+#[must_use]
 pub fn to_transport_bytes_with(index: &BlockIndex, compression: Compression) -> Vec<u8> {
     let raw = index.to_bytes();
     let uncompressed_size = raw.len() as u64;

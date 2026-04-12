@@ -67,7 +67,9 @@ impl IncrementalBuilder {
     /// assert_eq!(recovered.block_count(), 2);
     /// ```
     pub fn append_blocks(serialized: &[u8], blocks: &[&[u8]]) -> Result<Vec<u8>> {
-        Self::append_blocks_with_boundary(serialized, None, blocks)
+        let index = BlockIndex::from_bytes_checked(serialized)?;
+        let prev_last_byte = index.last_byte;
+        Self::append_blocks_with_boundary(serialized, prev_last_byte, blocks)
     }
 
     /// Append one or more blocks with explicit boundary byte handling.
@@ -126,7 +128,8 @@ impl BlockIndex {
     /// [`Error::ZeroBloomBits`] if the index was
     /// constructed with an invalid zero-bit bloom configuration.
     pub fn append_block(&mut self, block_data: &[u8]) -> Result<()> {
-        self.append_block_with_boundary(block_data, None)
+        let prev_last_byte = self.last_byte;
+        self.append_block_with_boundary(block_data, prev_last_byte)
     }
 
     /// Append one full block, inserting the cross-boundary n-gram if `prev_last_byte` is provided.
@@ -166,6 +169,7 @@ impl BlockIndex {
             }
         }
         self.blooms.push(bloom);
+        self.last_byte = block_data.last().copied();
         self.total_len =
             self.total_len
                 .checked_add(block_data.len())

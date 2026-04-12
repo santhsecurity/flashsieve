@@ -13,7 +13,7 @@ use crate::index::{
 
 pub use crate::mmap_write::{ByteHistogramRef, NgramBloomRef};
 
-const SERIALIZED_HEADER_LEN: usize = 4 + 4 + 8 + 8 + 8;
+// Header length is now version-dependent (32 for v1/v2, 33 for v3).
 
 /// Magic marker for exact-pair table presence.
 const EXACT_PAIR_MARKER_PRESENT: u64 = crate::bloom::NgramBloom::exact_pair_magic();
@@ -70,7 +70,7 @@ impl<'a> MmapBlockIndex<'a> {
     /// when the header, checksum, or per-block layout is invalid.
     pub fn from_slice(data: &'a [u8]) -> Result<Self> {
         let header = parse_serialized_index_header(data)?;
-        let mut offset = SERIALIZED_HEADER_LEN;
+        let mut offset = header.header_len;
         let mut block_offsets = Vec::with_capacity(header.block_count);
         let mut block_metas = Vec::with_capacity(header.block_count);
 

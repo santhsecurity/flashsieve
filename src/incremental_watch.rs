@@ -70,13 +70,13 @@ pub struct ChangeSet {
 
 impl ChangeSet {
     /// Whether any changes were detected.
-    #[must_use] 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.modified.is_empty() && self.removed.is_empty()
     }
 
     /// Total number of changes.
-    #[must_use] 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.modified.len() + self.removed.len()
     }
@@ -168,13 +168,13 @@ impl IncrementalWatch {
     }
 
     /// Root directory being watched.
-    #[must_use] 
+    #[must_use]
     pub fn root(&self) -> &Path {
         &self.root
     }
 
     /// Time since the last poll.
-    #[must_use] 
+    #[must_use]
     pub fn since_last_poll(&self) -> Duration {
         self.last_poll.elapsed()
     }

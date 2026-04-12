@@ -31,7 +31,9 @@ fn end_to_end_filtering() {
 
     for offset in offsets {
         assert!(
-            candidates.iter().any(|range| range.offset <= offset && offset < range.offset + range.length),
+            candidates
+                .iter()
+                .any(|range| range.offset <= offset && offset < range.offset + range.length),
             "pattern at offset {offset} not found in candidates {candidates:?}"
         );
     }
