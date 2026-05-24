@@ -4,9 +4,16 @@ use crate::error::Error;
 use crate::histogram::ByteHistogram;
 
 pub(crate) const SERIALIZED_MAGIC: &[u8; 4] = b"FSBX";
-pub(crate) const MAX_SUPPORTED_SERIALIZATION_VERSION: u32 = 3;
+pub(crate) const MAX_SUPPORTED_SERIALIZATION_VERSION: u32 = 4;
 pub(crate) const MIN_SERIALIZED_HEADER_LEN: usize = 4 + 4 + 8 + 8 + 8;
 pub(crate) const MIN_SERIALIZED_HEADER_LEN_V3: usize = MIN_SERIALIZED_HEADER_LEN + 1;
+// V4 replaces the single ambiguous last_byte sentinel byte with a
+// 2-byte (present_flag, value) pair. V3's `0xFF == None` encoding
+// collides with `Some(0xFF)`; V4 disambiguates by reserving a
+// dedicated presence byte so all 256 possible u8 values can be
+// represented as `Some(value)`. Reading v3 retains the lossy
+// semantic for backward compatibility.
+pub(crate) const MIN_SERIALIZED_HEADER_LEN_V4: usize = MIN_SERIALIZED_HEADER_LEN + 2;
 pub(crate) const SERIALIZED_HISTOGRAM_LEN: usize = 256 * std::mem::size_of::<u32>();
 pub(crate) const SERIALIZED_BLOOM_HEADER_LEN: usize = 8 + 8;
 pub(crate) const MIN_SERIALIZED_BLOCK_LEN: usize =
@@ -60,16 +67,25 @@ impl BlockIndex {
                     + exact_pair_size
             })
             .sum();
-        let header_len = MIN_SERIALIZED_HEADER_LEN_V3;
+        let header_len = MIN_SERIALIZED_HEADER_LEN_V4;
         let total_size = header_len + block_overhead + SERIALIZED_CRC_LEN;
         let mut buf = Vec::with_capacity(total_size);
         buf.extend_from_slice(b"FSBX");
-        buf.extend_from_slice(&3u32.to_le_bytes());
+        buf.extend_from_slice(&4u32.to_le_bytes());
 
         buf.extend_from_slice(&(self.block_size as u64).to_le_bytes());
         buf.extend_from_slice(&(self.total_len as u64).to_le_bytes());
         buf.extend_from_slice(&(self.histograms.len() as u64).to_le_bytes());
-        buf.push(self.last_byte.unwrap_or(0xFF));
+        // 2-byte tagged last_byte: presence flag + value. V3 wrote
+        // a single byte with `0xFF == None`, aliasing `Some(0xFF)`
+        // and losing data on roundtrip. V4 reserves a dedicated
+        // presence byte so all u8 values round-trip correctly.
+        let (present, value) = match self.last_byte {
+            Some(b) => (1u8, b),
+            None => (0u8, 0u8),
+        };
+        buf.push(present);
+        buf.push(value);
 
         for (histogram, bloom) in self.histograms.iter().zip(&self.blooms) {
             // Bulk-write all 256 counts — avoids 256 individual to_le_bytes calls.
@@ -343,7 +359,9 @@ pub(crate) fn parse_serialized_index_header(
         });
     }
 
-    let header_len = if version >= 3 {
+    let header_len = if version >= 4 {
+        MIN_SERIALIZED_HEADER_LEN_V4
+    } else if version >= 3 {
         MIN_SERIALIZED_HEADER_LEN_V3
     } else {
         MIN_SERIALIZED_HEADER_LEN
@@ -390,13 +408,18 @@ pub(crate) fn parse_serialized_index_header(
     let block_count_raw = read_u64_le_checked(data, &mut offset)?;
     let block_count = usize::try_from(block_count_raw).unwrap_or(usize::MAX);
 
-    let last_byte = if version >= 3 {
+    let last_byte = if version >= 4 {
+        // V4: 2-byte tagged encoding.
+        let present = data[offset];
+        let value = data[offset + 1];
+        if present == 0 { None } else { Some(value) }
+    } else if version >= 3 {
+        // V3: lossy 1-byte encoding (0xFF aliases Some(0xFF) with None).
+        // Preserve the original (lossy) behavior so existing v3 data
+        // continues to read; data written with v3 cannot recover
+        // `Some(0xFF)` because that information was never persisted.
         let byte = data[offset];
-        if byte == 0xFF {
-            None
-        } else {
-            Some(byte)
-        }
+        if byte == 0xFF { None } else { Some(byte) }
     } else {
         None
     };

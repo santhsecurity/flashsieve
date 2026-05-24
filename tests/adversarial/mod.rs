@@ -530,8 +530,9 @@ fn serialization_round_trip_integrity() {
     // Verify serialized format structure
     assert_eq!(&serialized[0..4], b"FSBX", "magic bytes incorrect");
     assert_eq!(
-        serialized[4], 3,
-        "version should be 3 (was 2 prior to schema bump)"
+        serialized[4], 4,
+        "version should be 4 (V4 bumped the tagged last_byte encoding to 2 bytes \
+         so all u8 values round-trip; V3 aliased Some(0xFF) with None)"
     );
 
     // Deserialize and compare
