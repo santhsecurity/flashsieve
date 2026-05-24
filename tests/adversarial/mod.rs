@@ -529,7 +529,10 @@ fn serialization_round_trip_integrity() {
 
     // Verify serialized format structure
     assert_eq!(&serialized[0..4], b"FSBX", "magic bytes incorrect");
-    assert_eq!(serialized[4], 3, "version should be 3 (was 2 prior to schema bump)");
+    assert_eq!(
+        serialized[4], 3,
+        "version should be 3 (was 2 prior to schema bump)"
+    );
 
     // Deserialize and compare
     let deserialized = BlockIndex::from_bytes(&serialized).expect("deserialize should succeed");
