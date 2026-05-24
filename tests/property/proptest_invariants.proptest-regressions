@@ -7,3 +7,4 @@
 cc e9fafb244ad4cc9124c7ed98169926c6703dc81466a2856d29dd832c955981f0 # shrinks to block_size = 256, num_blocks = 1, bloom_bits = 65
 cc ee67592993d098f2d01c25994e6bc588dd302fe88b57e07dc6063ef4f780f9fb # shrinks to block_size = 512, num_blocks = 2, target_block_idx = 3, pattern = [188]
 cc 8497fd08ac1267b07b2a299240d6a484aa502be64203cb2430418048c0c8268d # shrinks to block_size = 256, initial_blocks = 1, append_blocks = 4, pattern = [146, 4]
+cc 2fbbb81dee1393a6c9e2f02694116e77678c9ca56a671da5fa9022cc6da1028f # shrinks to block_size = 512, num_blocks = 9, bloom_bits = 583
