@@ -58,8 +58,14 @@ jobs:
         with:
           components: miri
 
-      - name: Miri test
-        run: cargo miri test
+      # Miri can't run libc::* foreign functions or interpret SIMD
+      # intrinsics; flashsieve's integration tests hit both via
+      # BlockIndex serialization and CRC kernels. Restrict Miri to
+      # lib unit tests; integration coverage runs on the stable/beta/nightly
+      # Test job above. Add a 30-min timeout to fail-fast if it ever hangs.
+      - name: Miri test (lib only)
+        run: cargo miri test --lib
+        timeout-minutes: 30
 
   clippy:
     name: Clippy
