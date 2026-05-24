@@ -245,6 +245,7 @@ impl ByteFilter {
     }
 
     /// Return true if any required byte from any pattern appears in the histogram.
+    #[allow(clippy::needless_pass_by_value)] // impl is only on &ByteHistogram (Copy ref); by-value is by-pointer
     pub(crate) fn has_any_required_byte(&self, histogram: impl HistogramView) -> bool {
         self.compact_requirements
             .iter()

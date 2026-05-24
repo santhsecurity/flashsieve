@@ -340,7 +340,7 @@ proptest! {
 
         // Sort by offset as required by merge_adjacent
         // Use stable sort to handle duplicates deterministically
-        ranges.sort_by(|a, b| a.offset.cmp(&b.offset));
+        ranges.sort_by_key(|a| a.offset);
 
         // Remove duplicates for clean testing (same offset ranges)
         ranges.dedup_by(|a, b| a.offset == b.offset);

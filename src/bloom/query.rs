@@ -283,7 +283,7 @@ impl BlockedNgramBloom {
         }
 
         // Software pipelining: prefetch blocks ahead
-        ngrams.iter().enumerate().all(|(_i, &(a, b))| {
+        ngrams.iter().all(|&(a, b)| {
             let block_index = hash_to_index(wyhash_pair(a, b), self.num_blocks);
 
             // Prefetch removed to keep the crate fully safe.

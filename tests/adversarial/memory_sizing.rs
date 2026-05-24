@@ -169,7 +169,7 @@ fn memory_scaling_sublinear() {
             .collect();
 
         let pattern_refs: Vec<&[u8]> = patterns.iter().map(|p| p.as_slice()).collect();
-        let filter = NgramFilter::from_patterns(&pattern_refs);
+        let _filter = NgramFilter::from_patterns(&pattern_refs);
 
         // Memory usage scales with unique n-grams, not pattern count
         // This is the key efficiency property of the union_ngrams optimization
