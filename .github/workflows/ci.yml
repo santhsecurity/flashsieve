@@ -165,17 +165,26 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
 
-      - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin
+      # cargo-llvm-cov instead of tarpaulin. tarpaulin's ptrace-based
+      # instrumentation timed out on the 10k-case proptest
+      # (`property::zero_fnr::flashsieve_zero_false_negatives`) by
+      # exceeding the per-test 60s response window. llvm-cov uses
+      # source-based coverage with no ptrace, so the same proptest
+      # finishes in normal cargo-test time (~16s locally).
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Generate coverage
-        run: cargo tarpaulin --out Xml
+        run: cargo llvm-cov --all-targets --workspace --codecov --output-path codecov.json
+        timeout-minutes: 30
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
-          files: ./cobertura.xml
+          files: ./codecov.json
           fail_ci_if_error: false
 
   benchmarks:
