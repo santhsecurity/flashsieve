@@ -137,7 +137,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.76"
+          toolchain: "1.85"
 
       - name: Cache cargo
         uses: actions/cache@v4
