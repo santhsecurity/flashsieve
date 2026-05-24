@@ -178,8 +178,14 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Generate coverage
-        run: cargo llvm-cov --all-targets --workspace --codecov --output-path codecov.json
-        timeout-minutes: 30
+        # `--lib --bins` only — exclude integration tests because the
+        # scale suite (1M-block fixtures) times out under llvm-cov
+        # instrumentation even with a 30-min budget. The
+        # Test (stable/beta/nightly) matrix already runs the full
+        # integration suite for correctness; coverage gates on the
+        # unit-test surface which is enough signal for codecov.
+        run: cargo llvm-cov --lib --bins --workspace --codecov --output-path codecov.json
+        timeout-minutes: 20
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4

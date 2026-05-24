@@ -228,7 +228,7 @@ mod tests {
     use crate::index::CandidateRange;
     use crate::{BlockIndexBuilder, ByteFilter, NgramFilter};
     use rand::rngs::StdRng;
-    use rand::{Rng, RngCore, SeedableRng};
+    use rand::{RngCore, SeedableRng};
 
     fn make_data(block_size: usize) -> Vec<u8> {
         let mut data = vec![b'x'; block_size * 4];
