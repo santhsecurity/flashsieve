@@ -1,6 +1,7 @@
 use flashsieve::{BlockIndexBuilder, ByteFilter, NgramFilter};
 
 #[test]
+#[ignore = "C1-F039: 1M-block scale — run via `cargo test --test scale_suite` in dedicated CI job"]
 fn test_internet_scale_zero_fnr() {
     let block_size = 256;
     let bloom_bits = 1024;

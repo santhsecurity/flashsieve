@@ -45,19 +45,6 @@ harness = false
 
 
 [[test]]
-name="scale_suite"
-path="tests/unit/scale_suite.rs"
-
-
-[[test]]
-name="property_suite"
-path="tests/property/property_suite.rs"
-
-[[test]]
-name="break_it_suite"
-path="tests/adversarial/break_it.rs"
-
-[[test]]
 name = "unit_blocked_bloom"
 path = "tests/unit/blocked_bloom.rs"
 
@@ -146,7 +133,7 @@ name = "unit_regression_suite"
 path = "tests/unit/regression_suite.rs"
 
 [[test]]
-name = "unit_scale_suite"
+name = "scale_suite"
 path = "tests/unit/scale_suite.rs"
 
 [[test]]
@@ -210,8 +197,8 @@ name = "adversarial_bloom_collisions"
 path = "tests/adversarial/bloom_collisions.rs"
 
 [[test]]
-name = "adversarial_break_it"
-path = "tests/adversarial/break_it.rs"
+name = "break_it_suite"
+path = "tests/break_it/mod.rs"
 
 [[test]]
 name = "adversarial_concurrent_100_threads"
@@ -258,7 +245,7 @@ name = "property"
 path = "tests/property/mod.rs"
 
 [[test]]
-name = "property_property_suite"
+name = "property_suite"
 path = "tests/property/property_suite.rs"
 
 [[test]]
@@ -272,4 +259,16 @@ path = "tests/property/test_legendary_property.rs"
 [[test]]
 name = "property_zero_fnr"
 path = "tests/property/zero_fnr.rs"
+
+[[test]]
+name = "campaign_s_proptest_03"
+path = "tests/campaign_s_proptest_03.rs"
+
+[[test]]
+name = "campaign_s_proptest_03_ext"
+path = "tests/campaign_s_proptest_03_ext.rs"
+
+[[test]]
+name = "campaign_s_proptest_03_ext_min"
+path = "tests/campaign_s_proptest_03_ext_min.rs"
 
