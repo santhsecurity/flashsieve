@@ -163,3 +163,25 @@ fn from_bytes_option_api_on_bad_input() {
     let bad = b"NOT_AN_INDEX".to_vec();
     assert!(BlockIndex::from_bytes(&bad).is_none());
 }
+
+/// from_bytes_checked must reject a serialized index whose blocks carry
+/// differing bloom bit counts (a per-index invariant): all blocks share one
+/// bloom size, so a mismatch means a corrupt/hand-crafted blob.
+#[test]
+fn from_bytes_checked_rejects_mismatched_block_bloom_bits() {
+    use flashsieve::{ByteHistogram, Error, NgramBloom};
+
+    let h1 = ByteHistogram::from_block(b"ab");
+    let h2 = ByteHistogram::from_block(b"cd");
+    let b1 = NgramBloom::from_block(b"ab", 1024).unwrap();
+    let b2 = NgramBloom::from_block(b"cd", 2048).unwrap(); // deliberately different
+    let index = BlockIndex::new(256, 512, vec![h1, h2], vec![b1, b2]);
+
+    let bytes = index.to_bytes();
+    let err = BlockIndex::from_bytes_checked(&bytes)
+        .expect_err("mismatched per-block bloom sizes must be rejected");
+    assert!(
+        matches!(err, Error::IncompatibleIndexConfiguration { .. }),
+        "expected IncompatibleIndexConfiguration, got {err:?}"
+    );
+}

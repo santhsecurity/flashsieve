@@ -327,6 +327,13 @@ impl BlockIndex {
 
         self.histograms = next_histograms;
         self.blooms = next_blooms;
+        // Removal is suffix-only (enforced above), so the final block is always
+        // dropped and the cached last_byte now refers to removed data. We cannot
+        // recover the new boundary byte from the aggregated histograms/blooms, so
+        // clear it: the next append omits the cross-boundary n-gram rather than
+        // pairing the new block's first byte with a byte that is no longer at the
+        // boundary (a wrong n-gram).
+        self.last_byte = None;
         self.total_len = self
             .total_len
             .checked_sub(removed_len)

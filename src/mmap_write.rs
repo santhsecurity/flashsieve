@@ -136,6 +136,13 @@ impl NgramBloomRef<'_> {
     #[inline(always)]
     #[allow(clippy::cast_possible_truncation)]
     pub fn maybe_contains_bloom(&self, first: u8, second: u8) -> bool {
+        // An empty bloom (num_bits == 0, e.g. the deprecated `bloom()` out-of-range
+        // fallback) contains nothing. Guard here: otherwise `mask` becomes
+        // u64::MAX and the resulting huge index reads past the empty bloom_data,
+        // panicking on a bounds check.
+        if self.num_bits == 0 {
+            return false;
+        }
         let (h1, h2) = hash_pair(first, second);
         let mask = (self.num_bits as u64).wrapping_sub(1);
         let idx0 = (h1 & mask) as usize;

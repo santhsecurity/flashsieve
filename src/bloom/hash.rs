@@ -63,7 +63,7 @@ pub(crate) fn hash_pair(a: u8, b: u8) -> (u64, u64) {
 
 /// Convert a hash value to a bit index.
 ///
-/// Uses bitwise AND for fast reduction — num_bits is always a power of two
+/// Uses bitwise AND for fast reduction, num_bits is always a power of two
 /// (enforced during construction). The legacy modulo fallback was removed
 /// to eliminate a branch from the hot path.
 #[inline(always)]

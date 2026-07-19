@@ -7,7 +7,7 @@
 //! Adversarial tests for ByteFilter and NgramFilter correctness.
 //!
 //! These tests verify that no filter configuration can produce a false
-//! negative — a block containing a pattern must NEVER be filtered out.
+//! negative (a block containing a pattern must NEVER be filtered out).
 
 use flashsieve::{BlockIndexBuilder, ByteFilter, NgramFilter};
 
@@ -118,7 +118,7 @@ fn ngram_filter_pattern_abc_requires_ab_and_bc() {
     let filter = NgramFilter::from_patterns(&[b"abc"]);
     let mut bloom = flashsieve::NgramBloom::new(4096).unwrap();
     bloom.insert_ngram(b'a', b'b');
-    // Missing "bc" ngram — should fail.
+    // Missing "bc" ngram (should fail).
     assert!(!filter.matches_bloom(&bloom));
     bloom.insert_ngram(b'b', b'c');
     // Now both ngrams present.

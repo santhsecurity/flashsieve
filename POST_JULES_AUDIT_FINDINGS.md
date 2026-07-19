@@ -3,13 +3,13 @@
 **Auditor:** Security Researcher  
 **Date:** 2026-04-04  
 **Scope:** libs/performance/indexing/flashsieve  
-**Objective:** Find what Jules MISSED — unchecked casts, untested edge cases, missing adversarial tests for false negatives at scale, regressions introduced by Jules
+**Objective:** Find what Jules MISSED, unchecked casts, untested edge cases, missing adversarial tests for false negatives at scale, regressions introduced by Jules
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-Jules made a legendary pass. The codebase is well-architected with good test coverage. However, **5 findings** were identified that Jules missed:
+Jules made a depth pass. The codebase is well-architected with good test coverage. However, **5 findings** were identified that Jules missed:
 
 - **1 CRITICAL:** MmapBlockIndex silently uses bloom-only path even when exact-pairs would be available
 - **2 HIGH:** Missing adversarial tests for false negatives at internet scale (cross-block-boundary patterns)
@@ -28,7 +28,7 @@ Jules made a legendary pass. The codebase is well-architected with good test cov
 
 `NgramBloomRef::uses_exact_pairs()` is hardcoded to return `false`, causing `MmapBlockIndex::candidate_blocks` to ALWAYS use the bloom-only path (`maybe_contains_bloom`) even when the underlying bloom filter was created with `num_bits >= 4096` (which would enable exact-pairs in `NgramBloom`).
 
-This is a **functional regression** — serialized indexes accessed via `MmapBlockIndex` have higher false positive rates than equivalent `BlockIndex` queries on deserialized data.
+This is a **functional regression**: serialized indexes accessed via `MmapBlockIndex` have higher false positive rates than equivalent `BlockIndex` queries on deserialized data.
 
 ### Root Cause
 
@@ -327,12 +327,12 @@ let bloom = mmap_index.try_bloom(0).unwrap();
 
 ### Good Practices Found (Jules got these right)
 
-1. **Excellent overflow protection** — Uses `checked_add`, `checked_mul`, `checked_sub` throughout
-2. **Comprehensive deserialization validation** — `parse_serialized_index_header` validates all inputs
-3. **Good use of unsafe** — Only 3 unsafe blocks, all with valid safety comments
-4. **Fuzzing coverage** — 5 fuzz targets covering builder, insert/query, deserialize, bloom raw parts, and mmap
-5. **Thread safety tests** — Concurrent read tests exist
-6. **CRC-32 integrity** — All serialized data has checksum validation
+1. **Excellent overflow protection**: Uses `checked_add`, `checked_mul`, `checked_sub` throughout
+2. **Comprehensive deserialization validation**: `parse_serialized_index_header` validates all inputs
+3. **Good use of unsafe**: Only 3 unsafe blocks, all with valid safety comments
+4. **Fuzzing coverage**: 5 fuzz targets covering builder, insert/query, deserialize, bloom raw parts, and mmap
+5. **Thread safety tests**: Concurrent read tests exist
+6. **CRC-32 integrity**: All serialized data has checksum validation
 
 ### Potential Improvements (Non-Security)
 
@@ -358,10 +358,10 @@ let bloom = mmap_index.try_bloom(0).unwrap();
 
 ## CONCLUSION
 
-The flashsieve codebase is well-architected and Jules did an excellent job. The **CRITICAL** finding (Finding 1) is the most important — it causes silent performance degradation at scale. The HIGH severity findings are missing test coverage that could catch false negative bugs.
+The flashsieve codebase is well-architected and Jules did an excellent job. The **CRITICAL** finding (Finding 1) is the most important, it causes silent performance degradation at scale. The HIGH severity findings are missing test coverage that could catch false negative bugs.
 
 **Recommended Priority:**
-1. Fix Finding 1 (CRITICAL) — Document or fix the exact_pairs limitation
-2. Add tests for Finding 2 and 3 (HIGH) — Prevent false negatives at scale
-3. Implement Finding 4 (MEDIUM) — Enable blocked bloom for persisted indexes
-4. Address Finding 5 (LOW) — Clean up deprecated usage
+1. Fix Finding 1 (CRITICAL): Document or fix the exact_pairs limitation
+2. Add tests for Finding 2 and 3 (HIGH): Prevent false negatives at scale
+3. Implement Finding 4 (MEDIUM): Enable blocked bloom for persisted indexes
+4. Address Finding 5 (LOW): Clean up deprecated usage

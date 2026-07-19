@@ -55,7 +55,7 @@ fn file_bloom_combined_matches_plain_index() {
 
 #[test]
 fn file_bloom_skips_all_blocks_when_union_has_no_ngrams() {
-    // Only byte 'a' repeated — no "bc" bigram anywhere.
+    // Only byte 'a' repeated (no "bc" bigram anywhere).
     let data = vec![b'a'; BLOCK_SIZE * 4];
     let index = BlockIndexBuilder::new()
         .block_size(BLOCK_SIZE)

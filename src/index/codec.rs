@@ -88,7 +88,7 @@ impl BlockIndex {
         buf.push(value);
 
         for (histogram, bloom) in self.histograms.iter().zip(&self.blooms) {
-            // Bulk-write all 256 counts — avoids 256 individual to_le_bytes calls.
+            // Bulk-write all 256 counts (avoids 256 individual to_le_bytes calls).
             for &count in histogram.raw_counts() {
                 buf.extend_from_slice(&count.to_le_bytes());
             }
@@ -129,7 +129,7 @@ impl BlockIndex {
     /// # Errors
     ///
     /// Returns a variant of [`Error`] describing the exact
-    /// failure mode — truncated header, invalid magic, unsupported version,
+    /// failure mode, truncated header, invalid magic, unsupported version,
     /// block count overflow, truncated block data, or CRC mismatch.
     pub fn from_bytes_checked(data: &[u8]) -> crate::error::Result<Self> {
         let header = parse_serialized_index_header(data)?;
@@ -137,6 +137,11 @@ impl BlockIndex {
 
         let mut histograms = Vec::with_capacity(header.block_count);
         let mut blooms = Vec::with_capacity(header.block_count);
+        // All blocks in a single index must share one bloom bit count (it is a
+        // per-index config, not per-block). A corrupt/hand-crafted blob with
+        // mismatched block sizes would otherwise produce an index whose
+        // candidate_blocks / append paths assume uniform sizing.
+        let mut expected_num_bits: Option<usize> = None;
 
         for block_index in 0..header.block_count {
             let mut counts = [0_u32; 256];
@@ -239,6 +244,16 @@ impl BlockIndex {
                 None
             };
 
+            match expected_num_bits {
+                Some(expected) if expected != num_bits => {
+                    return Err(Error::IncompatibleIndexConfiguration {
+                        reason: "serialized blocks have differing bloom bit counts",
+                    });
+                }
+                None => expected_num_bits = Some(num_bits),
+                _ => {}
+            }
+
             blooms.push(
                 NgramBloom::from_serialized_parts(num_bits, words, exact_pairs)
                     .map_err(|_| Error::TruncatedBlock { block_index })?,
@@ -301,7 +316,10 @@ fn word_count_to_le_bytes(words: &[u64]) -> [u8; 8] {
 ///             crc >>= 1
 ///     table[i] = crc
 /// ```
-fn crc32_simple(data: &[u8]) -> u32 {
+/// CRC32 (IEEE 802.3 polynomial 0xEDB88320), table-driven. This is the ONE
+/// canonical CRC32 for the crate; `transport` re-uses it rather than keeping a
+/// slower bit-serial copy.
+pub(crate) fn crc32_simple(data: &[u8]) -> u32 {
     static TABLE: [u32; 256] = {
         let mut table = [0u32; 256];
         let mut i = 0;

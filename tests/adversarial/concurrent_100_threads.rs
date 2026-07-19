@@ -1,18 +1,18 @@
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
-//! CRITICAL: Concurrent access from 100 threads — must not race.
+//! CRITICAL: Concurrent access from 100 threads (must not race).
 //!
 //! At internet scale, warpscan processes files concurrently. Race conditions
 //! in the bloom filter or filter structures could cause false negatives,
 //! letting malware through.
 //!
-//! CORE LAW 4: Every finding is CRITICAL — at internet scale, a "low" bug
+//! CORE LAW 4: Every finding is CRITICAL, at internet scale, a "low" bug
 //! corrupts billions of records.
 
 use flashsieve::{BlockIndexBuilder, NgramBloom, NgramFilter};
 use std::sync::{Arc, Barrier};
 use std::thread;
 
-/// Test 100 threads reading shared bloom filter — must not race.
+/// Test 100 threads reading shared bloom filter (must not race).
 ///
 /// NgramBloom and NgramFilter are immutable after construction,
 /// so concurrent reads should be safe. This test verifies no
@@ -68,7 +68,7 @@ fn concurrent_100_threads_shared_bloom_reads() {
     for handle in handles {
         handle
             .join()
-            .expect("Thread panicked — possible race condition!");
+            .expect("Thread panicked, possible race condition!");
     }
 
     println!(

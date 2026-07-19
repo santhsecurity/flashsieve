@@ -182,7 +182,7 @@ impl BlockIndex {
         let paired_compact = byte_filter.compact_requirements();
         let paired_ngrams = ngram_filter.pattern_ngrams();
         let is_paired = paired_compact.len() == paired_ngrams.len();
-        // Hoist the exact-pairs check outside the per-block loop — all blocks
+        // Hoist the exact-pairs check outside the per-block loop, all blocks
         // in an index use the same bloom_bits, so this is constant.
         let use_exact = self
             .blooms

@@ -26,13 +26,13 @@ fn blocked_maybe_contains_pattern(bloom: &BlockedNgramBloom, pattern: &[u8]) -> 
 }
 fn random_patterns(rng: &mut StdRng, n: usize, len: usize) -> Vec<Vec<u8>> {
     (0..n)
-        .map(|_| (0..len).map(|_| rng.gen::<u8>()).collect())
+        .map(|_| (0..len).map(|_| rng.random::<u8>()).collect())
         .collect()
 }
 fn random_distinct_ngrams(rng: &mut StdRng, n: usize) -> Vec<(u8, u8)> {
     let mut set = HashSet::new();
     while set.len() < n {
-        set.insert((rng.gen(), rng.gen()));
+        set.insert((rng.random(), rng.random()));
     }
     set.into_iter().collect()
 }
@@ -89,7 +89,7 @@ fn false_positive_rate_matches_theory() {
     let mut false_positives = 0usize;
     for _ in 0..TRIALS {
         let (a, b) = loop {
-            let p = (rng.gen::<u8>(), rng.gen::<u8>());
+            let p = (rng.random::<u8>(), rng.random::<u8>());
             if !inserted.contains(&p) {
                 break p;
             }
@@ -132,7 +132,7 @@ fn hash_independence_verified() {
         vec![0usize; SAMPLES],
     );
     for i in 0..SAMPLES {
-        let (a, b) = (rng.gen::<u8>(), rng.gen::<u8>());
+        let (a, b) = (rng.random::<u8>(), rng.random::<u8>());
         let h1 = wyhash_pair(a, b);
         let h2 = derive_second_hash(h1);
         idx0[i] = (h1 & mask) as usize;
@@ -229,7 +229,7 @@ fn capacity_overflow_never_creates_false_negatives() {
     let mut fp = 0usize;
     for _ in 0..TRIALS {
         let (a, b) = loop {
-            let p = (rng.gen::<u8>(), rng.gen::<u8>());
+            let p = (rng.random::<u8>(), rng.random::<u8>());
             if !inserted.contains(&p) {
                 break p;
             }
@@ -346,7 +346,7 @@ fn concurrent_queries_match_single_threaded() {
     }
     let bloom = Arc::new(bloom);
     let mut queries: Vec<(u8, u8)> = inserted.clone();
-    queries.extend((0..5_000).map(|_| (rng.gen::<u8>(), rng.gen::<u8>())));
+    queries.extend((0..5_000).map(|_| (rng.random::<u8>(), rng.random::<u8>())));
     let expected: Vec<bool> = queries
         .iter()
         .map(|&(a, b)| bloom.maybe_contains(a, b))
@@ -391,7 +391,7 @@ fn empty_bloom_rejects_everything() {
     }
     let mut rng = StdRng::seed_from_u64(0xE77E_E77E);
     for _ in 0..100 {
-        let pattern: Vec<u8> = (0..16).map(|_| rng.gen()).collect();
+        let pattern: Vec<u8> = (0..16).map(|_| rng.random()).collect();
         assert!(
             !bloom.maybe_contains_pattern(&pattern),
             "empty bloom matched pattern"

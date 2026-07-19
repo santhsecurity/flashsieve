@@ -97,17 +97,28 @@ impl IncrementalWatch {
     ///
     /// Scans the directory tree and compares against known state.
     /// Returns the set of files that changed.
-    pub fn poll(&mut self) -> ChangeSet {
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Io`](crate::Error::Io) if the directory tree cannot be
+    /// walked. This must fail loud: silently treating a failed walk as an empty
+    /// tree would report every known file as removed and overwrite the known-file
+    /// set with the empty set, corrupting every subsequent poll (a transient
+    /// permission or I/O error would masquerade as a mass deletion).
+    pub fn poll(&mut self) -> Result<ChangeSet> {
         let mut current_files = HashSet::new();
         let mut changes = ChangeSet::default();
 
-        // Walk directory tree
-        if let Ok(entries) = walk_dir(&self.root, self.config.max_file_size) {
-            for path in entries {
-                current_files.insert(path.clone());
-                if !self.known_files.contains(&path) {
-                    changes.modified.push(path);
-                }
+        // Walk directory tree; a walk failure is propagated, never swallowed.
+        let entries =
+            walk_dir(&self.root, self.config.max_file_size).map_err(|source| crate::Error::Io {
+                path: self.root.display().to_string(),
+                source,
+            })?;
+        for path in entries {
+            current_files.insert(path.clone());
+            if !self.known_files.contains(&path) {
+                changes.modified.push(path);
             }
         }
 
@@ -120,7 +131,7 @@ impl IncrementalWatch {
 
         self.known_files = current_files;
         self.last_poll = Instant::now();
-        changes
+        Ok(changes)
     }
 
     /// Build a block index from only the modified files.
@@ -147,12 +158,17 @@ impl IncrementalWatch {
 
         let mut all_bytes = Vec::new();
         for path in &changes.modified {
-            if let Ok(data) = std::fs::read(path) {
-                if all_bytes.len().saturating_add(data.len()) > MAX_TOTAL_INDEX_BYTES {
-                    return Err(crate::error::Error::DataTooLarge);
-                }
-                all_bytes.extend_from_slice(&data);
+            // Fail loud on read errors instead of silently skipping the file: a
+            // skipped modified file is never indexed, so its content would be
+            // silently missing from later queries (a recall bug).
+            let data = std::fs::read(path).map_err(|source| crate::error::Error::Io {
+                path: path.display().to_string(),
+                source,
+            })?;
+            if all_bytes.len().saturating_add(data.len()) > MAX_TOTAL_INDEX_BYTES {
+                return Err(crate::error::Error::DataTooLarge);
             }
+            all_bytes.extend_from_slice(&data);
         }
 
         if all_bytes.is_empty() {
@@ -194,12 +210,18 @@ fn walk_dir_inner(dir: &Path, max_size: u64, out: &mut Vec<PathBuf>) -> std::io:
         let path = entry.path();
         let ft = entry.file_type()?;
         if ft.is_dir() {
-            let _ = walk_dir_inner(&path, max_size, out);
+            // Propagate subtree errors instead of `let _ =` swallowing them: a
+            // permission-denied (or otherwise unreadable) subdirectory would
+            // otherwise be silently skipped, so every file beneath it would be
+            // silently absent from the index - a recall loss the operator never
+            // sees (Law 10). Matches the fail-closed contract of index_changes.
+            walk_dir_inner(&path, max_size, out)?;
         } else if ft.is_file() {
-            if let Ok(meta) = entry.metadata() {
-                if meta.len() <= max_size {
-                    out.push(path);
-                }
+            // Same reasoning: a file whose metadata cannot be read is surfaced,
+            // not silently dropped from indexing.
+            let meta = entry.metadata()?;
+            if meta.len() <= max_size {
+                out.push(path);
             }
         }
     }
@@ -217,15 +239,60 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mut watcher = IncrementalWatch::new(dir.path(), WatchConfig::default());
 
-        // Initial poll — empty
-        let changes = watcher.poll();
+        // Initial poll, empty
+        let changes = watcher.poll().unwrap();
         assert!(changes.is_empty());
 
         // Add a file
         fs::write(dir.path().join("test.txt"), b"hello world").unwrap();
-        let changes = watcher.poll();
+        let changes = watcher.poll().unwrap();
         assert_eq!(changes.modified.len(), 1);
         assert!(changes.removed.is_empty());
+    }
+
+    #[test]
+    fn poll_on_unwalkable_root_fails_loud_and_preserves_state() {
+        // A failed directory walk must surface as Error::Io, NOT be treated as an
+        // empty tree. The old `if let Ok(entries)` swallowed the error, reported
+        // every known file as removed, and overwrote known_files with the empty
+        // set — a transient error masqueraded as a mass deletion and corrupted
+        // all subsequent polls.
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("a.txt"), b"hello").unwrap();
+        let mut watcher = IncrementalWatch::new(dir.path().to_path_buf(), WatchConfig::default());
+        let first = watcher.poll().unwrap();
+        assert_eq!(first.modified.len(), 1, "first poll registers the file");
+
+        // Remove the whole root so the next walk fails.
+        dir.close().unwrap();
+        let err = watcher.poll().unwrap_err();
+        assert!(
+            matches!(err, crate::error::Error::Io { .. }),
+            "failed walk must be Error::Io, got {err:?}"
+        );
+    }
+
+    #[test]
+    fn index_changes_propagates_read_error_instead_of_skipping() {
+        // A modified file that cannot be read must surface as Error::Io, not be
+        // silently dropped from the index (which would exclude its content from
+        // every later query: a recall bug).
+        let dir = tempfile::tempdir().unwrap();
+        let watcher = IncrementalWatch::new(dir.path(), WatchConfig::default());
+
+        let missing = dir.path().join("does_not_exist.bin");
+        let changes = ChangeSet {
+            modified: vec![missing.clone()],
+            removed: Vec::new(),
+        };
+
+        let err = watcher.index_changes(&changes).unwrap_err();
+        match err {
+            crate::error::Error::Io { path, .. } => {
+                assert!(path.contains("does_not_exist.bin"), "wrong path in error: {path}");
+            }
+            other => panic!("expected Error::Io, got {other:?}"),
+        }
     }
 
     #[test]
@@ -234,10 +301,10 @@ mod tests {
         fs::write(dir.path().join("test.txt"), b"hello").unwrap();
 
         let mut watcher = IncrementalWatch::new(dir.path(), WatchConfig::default());
-        let _ = watcher.poll(); // Register the file
+        let _ = watcher.poll().unwrap(); // Register the file
 
         fs::remove_file(dir.path().join("test.txt")).unwrap();
-        let changes = watcher.poll();
+        let changes = watcher.poll().unwrap();
         assert_eq!(changes.removed.len(), 1);
     }
 
@@ -247,8 +314,8 @@ mod tests {
         fs::write(dir.path().join("test.txt"), b"hello").unwrap();
 
         let mut watcher = IncrementalWatch::new(dir.path(), WatchConfig::default());
-        let _ = watcher.poll();
-        let changes = watcher.poll();
+        let _ = watcher.poll().unwrap();
+        let changes = watcher.poll().unwrap();
         assert!(changes.is_empty());
     }
 
@@ -258,7 +325,7 @@ mod tests {
         fs::write(dir.path().join("data.bin"), vec![0u8; 8192]).unwrap();
 
         let mut watcher = IncrementalWatch::new(dir.path(), WatchConfig::default());
-        let changes = watcher.poll();
+        let changes = watcher.poll().unwrap();
         assert!(!changes.is_empty());
 
         let index = watcher.index_changes(&changes).unwrap();

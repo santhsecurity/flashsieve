@@ -5,7 +5,7 @@
 //! memory usage determines whether we stay in L2/L3 cache or hit RAM.
 //! Cache misses = performance death.
 //!
-//! CORE LAW 4: Every finding is CRITICAL — at internet scale, a "low" bug
+//! CORE LAW 4: Every finding is CRITICAL, at internet scale, a "low" bug
 //! corrupts billions of records.
 
 use flashsieve::{BlockedNgramBloom, NgramBloom, NgramFilter};

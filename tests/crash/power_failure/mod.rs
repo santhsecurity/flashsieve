@@ -30,13 +30,13 @@ fn test_power_failure_during_flush() {
     let mut rng = StdRng::seed_from_u64(0xC4A5_1234);
 
     for _ in 0..50 {
-        let flush_len = rng.gen_range(1..base.len());
+        let flush_len = rng.random_range(1..base.len());
         let mut on_disk = base[..flush_len].to_vec();
 
         // Sometimes the OS leaves garbage after the flushed bytes if the file was extended
         // but blocks weren't written.
-        if rng.gen_bool(0.5) {
-            let garbage_len = rng.gen_range(1..4096);
+        if rng.random_bool(0.5) {
+            let garbage_len = rng.random_range(1..4096);
             let mut garbage = vec![0u8; garbage_len];
             rng.fill_bytes(&mut garbage);
             on_disk.extend(garbage);

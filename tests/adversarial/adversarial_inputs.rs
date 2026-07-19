@@ -90,8 +90,8 @@ fn worst_case_repetitive_data() {
 fn random_garbage_never_panics() {
     let mut rng = StdRng::seed_from_u64(0x6A6B_6167);
     for _ in 0..1000 {
-        let len = rng.gen_range(0..4096);
-        let data: Vec<u8> = (0..len).map(|_| rng.gen()).collect();
+        let len = rng.random_range(0..4096);
+        let data: Vec<u8> = (0..len).map(|_| rng.random()).collect();
         let _ = BlockIndexBuilder::new()
             .block_size(256)
             .bloom_bits(1024)
@@ -104,8 +104,8 @@ fn random_garbage_never_panics() {
 fn random_serialized_garbage_never_panics() {
     let mut rng = StdRng::seed_from_u64(0x6A6B_616A);
     for _ in 0..1000 {
-        let len = rng.gen_range(0..2000);
-        let data: Vec<u8> = (0..len).map(|_| rng.gen()).collect();
+        let len = rng.random_range(0..2000);
+        let data: Vec<u8> = (0..len).map(|_| rng.random()).collect();
         let _ = flashsieve::BlockIndex::from_bytes(&data);
         let _ = flashsieve::BlockIndex::from_bytes_checked(&data);
         let _ = flashsieve::MmapBlockIndex::from_slice(&data);

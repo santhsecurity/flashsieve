@@ -146,3 +146,63 @@ fn test_mmap_preserves_exact_pairs() {
         "Mmap and heap indexes should produce identical results"
     );
 }
+
+/// Regression: after `remove_blocks` drops the trailing block, the cached
+/// `last_byte` must not survive into the next `append_blocks`, or the new
+/// block gets a bogus cross-boundary n-gram pairing its first byte with the
+/// removed block's final byte.
+///
+/// Repro: index ends with block1's final byte 'X'; remove block1; append a
+/// new block starting with 'Z'. With the stale-last_byte bug, ('X','Z') is
+/// inserted into the appended block's exact-pair table even though 'X' is no
+/// longer at any boundary. The exact-pair table is a full 65536-bit table
+/// (no false positives for 2-byte pairs), so this assertion is deterministic.
+#[test]
+fn remove_then_append_does_not_insert_stale_boundary_ngram() {
+    use flashsieve::MmapBlockIndex;
+
+    let block_size = 256;
+    // Two blocks: block0 = all 'a', block1 = all 'b' except a distinctive
+    // final byte 'X'. bloom_bits >= 4096 enables the exact-pair table.
+    let mut data = vec![b'a'; block_size * 2];
+    for b in data[block_size..].iter_mut() {
+        *b = b'b';
+    }
+    let last = data.len() - 1;
+    data[last] = b'X';
+
+    let index = BlockIndexBuilder::new()
+        .block_size(block_size)
+        .bloom_bits(4096)
+        .build(&data)
+        .unwrap();
+    assert_eq!(index.block_count(), 2);
+
+    // Drop the trailing block (block id 1). This makes the cached boundary
+    // byte 'X' refer to removed data.
+    let mut index = index;
+    index.remove_blocks(&[1]).unwrap();
+    assert_eq!(index.block_count(), 1);
+    let serialized = index.to_bytes();
+
+    // Append a new block starting with a distinctive byte 'Z'.
+    let mut block2 = vec![b'c'; block_size];
+    block2[0] = b'Z';
+    let appended = IncrementalBuilder::append_blocks(&serialized, &[block2.as_slice()]).unwrap();
+
+    let mmap = MmapBlockIndex::from_slice(&appended).unwrap();
+    // Appended block is index 1 (block0 'a' survived at index 0).
+    let bloom = mmap.try_bloom(1).unwrap();
+
+    // The bug would have inserted ('X','Z') from the stale last_byte.
+    assert!(
+        !bloom.maybe_contains_exact(b'X', b'Z'),
+        "stale boundary n-gram ('X','Z') must not be inserted after remove_blocks"
+    );
+    // Sanity: the block's own leading n-gram ('Z','c') is present, so we know
+    // the block was actually indexed and the negative above is meaningful.
+    assert!(
+        bloom.maybe_contains_exact(b'Z', b'c'),
+        "the appended block's own first n-gram ('Z','c') should be indexed"
+    );
+}

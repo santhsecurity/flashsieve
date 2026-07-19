@@ -1,21 +1,21 @@
-# flashsieve — Internal Spec
+# flashsieve: Internal Spec
 
 > This file is gitignored. It exists for agents and internal development. Never committed to public repos.
 
 ## Identity
-Storage-level pre-filtering for pattern matching — skip blocks that can't contain matches.
+Storage-level pre-filtering for pattern matching (skip blocks that can't contain matches).
 
 ## Purpose
 Builds per-block byte histograms and 2-byte n-gram Bloom filters to eliminate disk reads for blocks guaranteed not to match patterns.
 
 ## North Star
-The Bloom filter implementation that security vendors benchmark against — mathematically sound FPR bounds, mmap-backed persistence, and zero false negatives.
+The Bloom filter implementation that security vendors benchmark against (mathematically sound FPR bounds, mmap-backed persistence, and zero false negatives).
 
 ## Role in Ecosystem
 - **Depends on:** (none internal)
 - **Depended on by:** warpscan, warpgrep, ziftsieve, scanpipe, fusedpipe
 - **Relationship to warpscan:** Flashsieve pre-filters file blocks before warpscan's regex/GPU engines see them, slashing I/O and CPU waste.
-- **Standalone value:** YES — any scanner or database needing block-level pre-filtering can use it independently.
+- **Standalone value:** YES (any scanner or database needing block-level pre-filtering can use it independently).
 
 ## Invariants
 - Bloom filter never produces false negatives for indexed n-grams.
@@ -34,4 +34,4 @@ The Bloom filter implementation that security vendors benchmark against — math
 - Lint preamble: yes
 - #![forbid(unsafe_code)]: yes
 - Doc coverage: ~90%
-- Known issues: Lib.rs comments mention unsafe in bloom word loads, but crate-level attributes `#![forbid(unsafe_code)]` and `#![deny(unsafe_code)]` are both present — documentation should be reconciled.
+- Known issues: Lib.rs comments mention unsafe in bloom word loads, but crate-level attributes `#![forbid(unsafe_code)]` and `#![deny(unsafe_code)]` are both present (documentation should be reconciled).

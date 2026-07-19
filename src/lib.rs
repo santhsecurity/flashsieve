@@ -9,14 +9,14 @@
 //!
 //! This crate provides:
 //!
-//! - [`BlockIndexBuilder`] — construct indexes
-//! - [`BlockIndex`] — query and serialize indexes
-//! - [`FileBloomIndex`] — file-level bloom union for fast n-gram rejection before per-block scans
-//! - [`IncrementalBuilder`] — append new blocks to serialized indexes without re-indexing prior data
-//! - [`MmapBlockIndex`] — query serialized indexes in place
-//! - [`ByteFilter`] — byte-level pre-filtering
-//! - [`NgramFilter`] — n-gram bloom pre-filtering
-//! - [`NgramBloom`] and [`BlockedNgramBloom`] — standalone bloom filters
+//! - [`BlockIndexBuilder`], construct indexes
+//! - [`BlockIndex`], query and serialize indexes
+//! - [`FileBloomIndex`], file-level bloom union for fast n-gram rejection before per-block scans
+//! - [`IncrementalBuilder`], append new blocks to serialized indexes without re-indexing prior data
+//! - [`MmapBlockIndex`], query serialized indexes in place
+//! - [`ByteFilter`], byte-level pre-filtering
+//! - [`NgramFilter`], n-gram bloom pre-filtering
+//! - [`NgramBloom`] and [`BlockedNgramBloom`], standalone bloom filters
 //!
 //! # Quick Start
 //!

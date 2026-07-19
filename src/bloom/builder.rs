@@ -102,8 +102,8 @@ impl NgramBloom {
     ///
     /// # Arguments
     ///
-    /// * `target_fpr` — desired false positive rate (e.g. 0.01 for 1%)
-    /// * `expected_items` — anticipated number of distinct n-grams to insert
+    /// * `target_fpr`: desired false positive rate (e.g. 0.01 for 1%)
+    /// * `expected_items`: anticipated number of distinct n-grams to insert
     ///
     /// # Errors
     ///
@@ -181,7 +181,7 @@ impl NgramBloom {
         self.bits[idx2 >> 6] |= 1_u64 << (idx2 & 63);
     }
 
-    /// Bitwise OR of all bloom word vectors — the set union of n-grams across blocks.
+    /// Bitwise OR of all bloom word vectors (the set union of n-grams across blocks).
     ///
     /// All inputs must share the same `num_bits` and word length (same as a single
     /// [`BlockIndex`](crate::BlockIndex) with uniform `bloom_bits`). The result uses only

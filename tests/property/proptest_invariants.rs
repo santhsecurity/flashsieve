@@ -73,10 +73,10 @@ proptest! {
         // Every pattern that is a subslice of the block must be found
         if block.len() >= 2 {
             // Test a few substrings to keep test time reasonable even with 10k cases
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             for _ in 0..10 {
-                let start = rng.gen_range(0..block.len() - 1);
-                let end = rng.gen_range(start + 1..=block.len());
+                let start = rng.random_range(0..block.len() - 1);
+                let end = rng.random_range(start + 1..=block.len());
                 let pattern = &block[start..end];
                 prop_assert!(
                     bloom.maybe_contains_pattern(pattern),
@@ -96,7 +96,7 @@ proptest! {
     ) {
         let total_size = block_size * num_blocks;
         let mut data = vec![0u8; total_size];
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         rng.fill(&mut data[..]);
 
         let original = BlockIndexBuilder::new()
@@ -131,7 +131,7 @@ proptest! {
 
         let mut bytes = index.to_bytes();
         // Pick a random byte to flip
-        let idx = rng.gen_range(0..bytes.len());
+        let idx = rng.random_range(0..bytes.len());
         bytes[idx] ^= 0x01; // Flip one bit
 
         let result = BlockIndex::from_bytes_checked(&bytes);
@@ -171,7 +171,7 @@ proptest! {
     ) {
         let target_block = target_block_idx % num_blocks;
         let mut all_data = vec![0u8; block_size * num_blocks];
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         rng.fill(&mut all_data[..]);
 
         // Ensure pattern fits in block
@@ -182,7 +182,7 @@ proptest! {
         };
 
         // Insert pattern into target block at random offset
-        let offset_in_block = rng.gen_range(0..=(block_size - p.len()));
+        let offset_in_block = rng.random_range(0..=(block_size - p.len()));
         let start = target_block * block_size + offset_in_block;
         all_data[start..start + p.len()].copy_from_slice(p);
 
@@ -228,7 +228,7 @@ proptest! {
         pattern in pattern_strategy(),
     ) {
         let mut all_data = vec![0u8; block_size * (initial_blocks + append_blocks)];
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         rng.fill(&mut all_data[..]);
 
         // Build from scratch

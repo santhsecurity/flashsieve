@@ -1,16 +1,16 @@
 # flashsieve
 
-Part of [Santh](https://santh.dev) - open source Rust security and infrastructure tooling. Follow [@SanthProject](https://x.com/SanthProject) on X.
-
 [![crates.io](https://img.shields.io/crates/v/flashsieve.svg)](https://crates.io/crates/flashsieve)
 [![docs.rs](https://docs.rs/flashsieve/badge.svg)](https://docs.rs/flashsieve)
 [![license](https://img.shields.io/crates/l/flashsieve.svg)](LICENSE)
+
+Part of [Santh](https://santh.dev) - open source Rust security and infrastructure tooling. Follow [@SanthProject](https://x.com/SanthProject) on X.
 
 **Storage-level pre-filtering for pattern matching.**
 
 `flashsieve` builds per-block byte histograms and 2-byte n-gram bloom filters,
 then uses them to answer which blocks *might* contain matches. If a block cannot
-contain a pattern, it is skipped entirely—saving CPU, I/O, and memory at scale.
+contain a pattern, it is skipped entirely: saving CPU, I/O, and memory at scale.
 
 ---
 
@@ -95,7 +95,7 @@ table, giving **zero false positives** for all possible 2-byte n-gram queries.
 
 This crate keeps `unsafe` usage narrowly scoped to hot-path bloom-filter word
 loads where index validity is proven by construction. All serialized input is
-validated (magic, version, checksum, bounds) before use—corrupt files return
+validated (magic, version, checksum, bounds) before use: corrupt files return
 typed errors rather than panicking.
 
 ---

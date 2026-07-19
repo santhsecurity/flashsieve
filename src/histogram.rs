@@ -150,7 +150,7 @@ impl ByteHistogram {
 
     /// Raw access to the 256-entry count array for bulk serialization.
     ///
-    /// Avoids 256 individual `count()` calls during index persistence —
+    /// Avoids 256 individual `count()` calls during index persistence 
     /// the caller can write the entire array with a single `copy_from_slice`.
     ///
     /// # Example

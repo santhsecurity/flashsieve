@@ -5,7 +5,7 @@
 //! If the hash function clusters outputs, certain bit positions will saturate
 //! while others remain empty, causing false negatives.
 //!
-//! CORE LAW 4: Every finding is CRITICAL — at internet scale, a "low" bug
+//! CORE LAW 4: Every finding is CRITICAL, at internet scale, a "low" bug
 //! corrupts billions of records.
 
 use flashsieve::NgramBloom;

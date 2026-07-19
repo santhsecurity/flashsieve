@@ -8,7 +8,7 @@ use flashsieve::{BlockIndexBuilder, ByteFilter, NgramFilter};
 /// (the gap) as a finding if it behaves unexpectedly, but documents the expected
 /// behavior of missing the span if neither block contains the full byte/ngram requirements.
 #[test]
-fn legendary_gap_pattern_spanning_boundary() {
+fn depth_gap_pattern_spanning_boundary() {
     let block_size = 256;
     let mut data = vec![0x00; 512];
 
@@ -57,7 +57,7 @@ fn legendary_gap_pattern_spanning_boundary() {
 /// Gap Test: False positive rate on highly entropic data.
 /// High entropy data can saturate the bloom filter, causing excessive false positives.
 #[test]
-fn legendary_gap_high_entropy_fpr() {
+fn depth_gap_high_entropy_fpr() {
     // Generate highly entropic data (simulating compressed/encrypted blocks)
     let block_size = 256;
     let data: Vec<u8> = (0..block_size)

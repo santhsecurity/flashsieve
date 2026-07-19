@@ -16,9 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SplitMix64 finalizer documentation with paper reference
 - CRC-32 lookup table documentation with polynomial details
 - Serialization wire format documentation with byte layout
-- Adversarial test suite with 25+ tests (`tests/legendary.rs`)
-- Property-based tests using proptest (`tests/legendary_proptest.rs`)
-- Comprehensive benchmarks using Criterion (`benches/legendary_bench.rs`)
+- Adversarial test suite with 25+ tests (`tests/depth.rs`)
+- Property-based tests using proptest (`tests/depth_proptest.rs`)
+- Comprehensive benchmarks using Criterion (`benches/depth_bench.rs`)
 - CI workflow with test, clippy, fmt, doc, and MSRV checks
 - Fuzz targets for deserialization and insert/query operations
 

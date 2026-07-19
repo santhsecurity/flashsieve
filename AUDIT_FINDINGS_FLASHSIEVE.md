@@ -148,7 +148,7 @@ When deserializing a bloom filter with `num_bits >= 4096`, `from_raw_parts()` se
 pub fn from_raw_parts(num_bits: usize, bits: Vec<u64>) -> Result<Self> {
     // ...
     Ok(Self {
-        exact_pairs: None,  // Always None — exact-pairs lost!
+        exact_pairs: None,  // Always None (exact-pairs lost)!
         // ...
     })
 }

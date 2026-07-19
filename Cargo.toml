@@ -4,11 +4,11 @@ version = "0.1.1"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
-description = "Storage-level pre-filtering for pattern matching — skip blocks that can't contain matches"
+description = "Storage-level pre-filtering for pattern matching, skip blocks that can't contain matches"
 keywords = ["filter", "bloom", "storage", "pattern-matching", "indexing"]
 categories = ["algorithms", "data-structures"]
-repository = "https://github.com/santhsecurity/flashsieve"
-homepage = "https://github.com/santhsecurity/flashsieve"
+repository = "https://github.com/santhreal/flashsieve"
+homepage = "https://santh.dev"
 documentation = "https://docs.rs/flashsieve"
 readme = "README.md"
 authors = ["Corum Collective LLC <contact@santh.io>"]
@@ -31,7 +31,7 @@ thiserror = "2"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
-rand = "0.8"
+rand = "0.9"
 proptest = "1.6"
 tempfile = "3.10"
 
@@ -40,7 +40,7 @@ name = "filter_throughput"
 harness = false
 
 [[bench]]
-name = "legendary_bench"
+name = "depth_bench"
 harness = false
 
 
@@ -109,8 +109,8 @@ name = "unit_internet_scale"
 path = "tests/unit/internet_scale.rs"
 
 [[test]]
-name = "unit_legendary"
-path = "tests/unit/legendary.rs"
+name = "unit_depth"
+path = "tests/unit/depth.rs"
 
 [[test]]
 name = "unit_mmap_index"
@@ -145,12 +145,12 @@ name = "unit_test_blocked_bloom"
 path = "tests/unit/test_blocked_bloom.rs"
 
 [[test]]
-name = "unit_test_legendary_gap"
-path = "tests/unit/test_legendary_gap.rs"
+name = "unit_test_depth_gap"
+path = "tests/unit/test_depth_gap.rs"
 
 [[test]]
-name = "unit_test_legendary_unit"
-path = "tests/unit/test_legendary_unit.rs"
+name = "unit_test_depth_unit"
+path = "tests/unit/test_depth_unit.rs"
 
 [[test]]
 name = "unit_unit_suite"
@@ -221,8 +221,8 @@ name = "adversarial"
 path = "tests/adversarial/mod.rs"
 
 [[test]]
-name = "adversarial_test_legendary_adversarial"
-path = "tests/adversarial/test_legendary_adversarial.rs"
+name = "adversarial_test_depth_adversarial"
+path = "tests/adversarial/test_depth_adversarial.rs"
 
 [[test]]
 name = "adversarial_transport_adversarial"
@@ -237,8 +237,8 @@ name = "integration"
 path = "tests/integration/mod.rs"
 
 [[test]]
-name = "property_legendary_proptest"
-path = "tests/property/legendary_proptest.rs"
+name = "property_depth_proptest"
+path = "tests/property/depth_proptest.rs"
 
 [[test]]
 name = "property"
@@ -253,8 +253,8 @@ name = "property_proptest_invariants"
 path = "tests/property/proptest_invariants.rs"
 
 [[test]]
-name = "property_test_legendary_property"
-path = "tests/property/test_legendary_property.rs"
+name = "property_test_depth_property"
+path = "tests/property/test_depth_property.rs"
 
 [[test]]
 name = "property_zero_fnr"

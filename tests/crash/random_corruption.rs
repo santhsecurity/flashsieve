@@ -22,8 +22,8 @@ fn test_random_corruption_recovery() {
     // We'll run a few hundred random corruptions
     for _ in 0..1000 {
         let mut corrupted = valid_bytes.clone();
-        let idx = rng.gen_range(0..corrupted.len());
-        corrupted[idx] = corrupted[idx].wrapping_add(rng.gen_range(1..255));
+        let idx = rng.random_range(0..corrupted.len());
+        corrupted[idx] = corrupted[idx].wrapping_add(rng.random_range(1..255));
 
         // This must either return an error cleanly (e.g. CRC mismatch, invalid magic, etc.)
         // or return a valid BlockIndex if the corruption didn't affect anything structurally critical and somehow passed checks (unlikely with CRC).

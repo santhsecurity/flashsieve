@@ -1,6 +1,6 @@
 #![allow(clippy::pedantic)]
 
-//! Adversarial tests for exact-pairs at block boundaries — Jules missed these.
+//! Adversarial tests for exact-pairs at block boundaries. Jules missed these.
 //!
 //! These tests verify that patterns at block boundaries are correctly found
 //! when exact-pairs is enabled (num_bits >= EXACT_PAIR_THRESHOLD_BITS).
@@ -229,7 +229,7 @@ fn exact_pairs_single_byte_pattern() {
     let candidates = index.candidate_blocks_ngram(&filter);
 
     // Should return all blocks (no n-gram filter applied)
-    // This is expected behavior — ngram filter doesn't filter single-byte patterns
+    // This is expected behavior, ngram filter doesn't filter single-byte patterns
     assert!(!candidates.is_empty());
 }
 
@@ -249,7 +249,7 @@ fn exact_pairs_empty_pattern() {
     let filter = NgramFilter::from_patterns(&[b"".as_slice()]);
     let candidates = index.candidate_blocks_ngram(&filter);
 
-    // Empty pattern behavior — should not panic
+    // Empty pattern behavior, should not panic
     let _ = candidates;
 }
 

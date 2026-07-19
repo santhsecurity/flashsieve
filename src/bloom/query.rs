@@ -342,8 +342,8 @@ mod tests {
         let mut inserted = vec![[false; 256]; 256].into_boxed_slice();
 
         for _ in 0..256 {
-            let first = rng.gen::<u8>();
-            let second = rng.gen::<u8>();
+            let first = rng.random::<u8>();
+            let second = rng.random::<u8>();
             bloom.insert_ngram(first, second);
             inserted[usize::from(first)][usize::from(second)] = true;
         }
@@ -351,8 +351,8 @@ mod tests {
         let mut false_positives = 0_usize;
         let mut trials = 0_usize;
         for _ in 0..10_000 {
-            let first = rng.gen::<u8>();
-            let second = rng.gen::<u8>();
+            let first = rng.random::<u8>();
+            let second = rng.random::<u8>();
             if inserted[usize::from(first)][usize::from(second)] {
                 continue;
             }
@@ -384,7 +384,7 @@ mod tests {
 
     /// Regression test for the `from_raw_parts` bug where an empty
     /// `exact_pairs` table caused `maybe_contains` to return `false`
-    /// for every query — violating the bloom filter invariant that
+    /// for every query, violating the bloom filter invariant that
     /// false negatives are impossible.
     #[test]
     fn from_raw_parts_preserves_membership() {
@@ -473,7 +473,7 @@ mod tests {
         let mut inserted = std::collections::HashSet::new();
 
         while inserted.len() < 10_000 {
-            let pair = (rng.gen::<u8>(), rng.gen::<u8>());
+            let pair = (rng.random::<u8>(), rng.random::<u8>());
             if inserted.insert(pair) {
                 bloom.insert(pair.0, pair.1);
             }
@@ -486,7 +486,7 @@ mod tests {
         let mut false_positives = 0usize;
         let mut trials = 0usize;
         while trials < 10_000 {
-            let pair = (rng.gen::<u8>(), rng.gen::<u8>());
+            let pair = (rng.random::<u8>(), rng.random::<u8>());
             if inserted.contains(&pair) {
                 continue;
             }

@@ -67,7 +67,7 @@ fn large_block_sum_equals_length() {
 
 #[test]
 fn count_at_u32_max_does_not_panic() {
-    // u32::MAX = 4,294,967,295 — we can't practically allocate that much,
+    // u32::MAX = 4,294,967,295, we can't practically allocate that much,
     // but we can verify the histogram doesn't overflow for large but reasonable sizes.
     let data = vec![0x00; 100_000];
     let histogram = ByteHistogram::from_block(&data);

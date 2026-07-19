@@ -17,7 +17,7 @@
 //! compress ~3-5x with RLE alone, making P2P sharing practical.
 
 use crate::error::{Error, Result};
-use crate::index::BlockIndex;
+use crate::index::{crc32_simple, BlockIndex};
 
 const TRANSPORT_MAGIC: [u8; 4] = *b"FSTR";
 const TRANSPORT_VERSION: u32 = 1;
@@ -29,7 +29,7 @@ const MAX_TRANSPORT_UNCOMPRESSED: usize = 16 * 1024 * 1024 * 1024;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Compression {
-    /// No compression — raw serialized bytes.
+    /// No compression (raw serialized bytes).
     None = 0,
     /// Run-length encoding for sparse bloom data.
     RunLength = 1,
@@ -258,6 +258,33 @@ pub fn rle_decompress(data: &[u8], expected_size: usize) -> Result<Vec<u8>> {
             }
             out.extend(std::iter::repeat_n(byte, count));
             i += 4;
+        } else if data[i] == 0xFE {
+            // Literal run: `0xFE count byte...` (the documented wire format). The
+            // encoder reserves 0xFE (it escapes every raw 0xFE via a 0xFF run), so
+            // a bare 0xFE at a marker position is always a literal-run header and
+            // can never collide with real data. `count` raw bytes follow verbatim.
+            if i + 1 >= data.len() {
+                return Err(Error::Transport {
+                    reason: "truncated RLE literal-run header".to_string(),
+                });
+            }
+            let count = data[i + 1] as usize;
+            let start = i + 2;
+            let end = start.checked_add(count).ok_or_else(|| Error::Transport {
+                reason: "RLE literal-run length overflow".to_string(),
+            })?;
+            if end > data.len() {
+                return Err(Error::Transport {
+                    reason: "truncated RLE literal run".to_string(),
+                });
+            }
+            if out.len().saturating_add(count) > expected_size {
+                return Err(Error::Transport {
+                    reason: "RLE decompression would exceed expected size".to_string(),
+                });
+            }
+            out.extend_from_slice(&data[start..end]);
+            i = end;
         } else {
             out.push(data[i]);
             i += 1;
@@ -265,22 +292,6 @@ pub fn rle_decompress(data: &[u8], expected_size: usize) -> Result<Vec<u8>> {
     }
 
     Ok(out)
-}
-
-/// Simple CRC32 (IEEE 802.3 polynomial) — no dependency needed.
-fn crc32_simple(data: &[u8]) -> u32 {
-    let mut crc = 0xFFFF_FFFFu32;
-    for &byte in data {
-        crc ^= byte as u32;
-        for _ in 0..8 {
-            if crc & 1 != 0 {
-                crc = (crc >> 1) ^ 0xEDB8_8320;
-            } else {
-                crc >>= 1;
-            }
-        }
-    }
-    !crc
 }
 
 #[cfg(test)]
@@ -376,6 +387,24 @@ mod tests {
         let compressed = rle_compress(&data);
         let decompressed = rle_decompress(&compressed, 50).unwrap();
         assert_eq!(data, decompressed);
+    }
+
+    #[test]
+    fn rle_decompress_decodes_0xfe_literal_run() {
+        // The documented `0xFE count byte...` literal-run form: 0xFE, len=3, then
+        // 3 raw bytes. Previously this decoded 0xFE as a plain literal byte and
+        // produced garbage; it must now emit exactly the 3 following bytes.
+        let wire = [0xFE, 3, b'a', b'b', b'c'];
+        let out = rle_decompress(&wire, 3).expect("literal run decodes");
+        assert_eq!(out, b"abc");
+    }
+
+    #[test]
+    fn rle_decompress_rejects_truncated_0xfe_literal_run() {
+        // 0xFE claims 5 bytes follow but only 2 are present -> must error, not
+        // read past the buffer.
+        let wire = [0xFE, 5, b'a', b'b'];
+        assert!(rle_decompress(&wire, 5).is_err());
     }
 
     #[test]

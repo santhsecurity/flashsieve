@@ -1,4 +1,4 @@
-# flashsieve-fuzz — Technical Spec
+# flashsieve-fuzz: Technical Spec
 
 ## Overview
 

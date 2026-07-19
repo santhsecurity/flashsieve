@@ -6,14 +6,14 @@ use flashsieve::bloom::NgramBloom;
 #[test]
 fn saturated_bloom_has_no_false_negatives() {
     // Insert every possible 2-byte ngram into the bloom filter.
-    // After saturation, EVERYTHING must test positive — zero false negatives.
+    // After saturation, EVERYTHING must test positive (zero false negatives).
     let mut bloom = NgramBloom::new(65536).unwrap();
     for a in 0..=u8::MAX {
         for b in 0..=u8::MAX {
             bloom.insert_ngram(a, b);
         }
     }
-    // Any 2-byte query must hit — the filter is fully saturated.
+    // Any 2-byte query must hit (the filter is fully saturated).
     assert!(bloom.maybe_contains(0xDE, 0xAD));
     assert!(bloom.maybe_contains(0x00, 0x00));
     assert!(bloom.maybe_contains(0xFF, 0xFF));
@@ -22,7 +22,7 @@ fn saturated_bloom_has_no_false_negatives() {
 #[test]
 fn empty_bloom_rejects_everything() {
     let bloom = NgramBloom::new(4096).unwrap();
-    // No insertions — everything should be rejected (no false positives
+    // No insertions, everything should be rejected (no false positives
     // on an empty filter because no bits are set).
     assert!(!bloom.maybe_contains(b'A', b'B'));
     assert!(!bloom.maybe_contains(0, 0));
@@ -71,9 +71,9 @@ fn zero_size_bloom_is_rejected() {
 fn maybe_contains_pattern_checks_all_ngrams() {
     let data = b"abcdef";
     let bloom = NgramBloom::from_block(data, 4096).unwrap();
-    // "abc" has ngrams "ab" and "bc" — both present.
+    // "abc" has ngrams "ab" and "bc" (both present).
     assert!(bloom.maybe_contains_pattern(b"abc"));
-    // "xyz" has ngrams "xy" and "yz" — neither present (with high probability).
+    // "xyz" has ngrams "xy" and "yz" (neither present (with high probability)).
     // Can't assert false due to FPR, but this exercises the path.
     let _ = bloom.maybe_contains_pattern(b"xyz");
 }

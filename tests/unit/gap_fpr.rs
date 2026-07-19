@@ -4,7 +4,7 @@
     clippy::cast_precision_loss,
     clippy::cast_sign_loss
 )]
-//! Gap tests for flashsieve — empirical FPR measurement and invariant proofs.
+//! Gap tests for flashsieve (empirical FPR measurement and invariant proofs).
 //!
 //! These tests measure the ACTUAL false positive rate of the bloom filter
 //! under realistic conditions. If the FPR exceeds bounds, the bloom parameters
@@ -35,7 +35,7 @@ fn measure_fpr(data_size: usize, num_test_patterns: usize, seed: u64) -> f64 {
         let a = ((i as u64).wrapping_mul(0xDEAD).wrapping_add(seed)) as u8;
         let b = ((i as u64).wrapping_mul(0xBEEF).wrapping_add(seed)) as u8;
         if actual_ngrams.contains(&(a, b)) {
-            continue; // skip — this is a true positive
+            continue; // skip, this is a true positive
         }
         trials += 1;
         if bloom.maybe_contains(a, b) {
@@ -99,7 +99,7 @@ fn zero_false_negatives_exhaustive_1mb() {
     assert_eq!(
         false_negatives, 0,
         "CRITICAL FINDING: {false_negatives} false negatives in 1MB data. Bloom filter \
-         invariant violated — patterns in data not detected."
+         invariant violated (patterns in data not detected)."
     );
 }
 

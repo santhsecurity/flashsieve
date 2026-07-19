@@ -3,9 +3,9 @@
 //! This module provides filters that determine whether a block might contain
 //! matches for given patterns:
 //!
-//! - [`ByteFilter`] — checks if all required bytes are present
-//! - [`NgramFilter`] — checks if all required 2-byte n-grams might be present
-//! - [`CompositeFilter`] — combines filters with logical operators
+//! - [`ByteFilter`], checks if all required bytes are present
+//! - [`NgramFilter`], checks if all required 2-byte n-grams might be present
+//! - [`CompositeFilter`], combines filters with logical operators
 
 use crate::bloom::NgramBloom;
 use crate::histogram::ByteHistogram;

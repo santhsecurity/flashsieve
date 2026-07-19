@@ -1,7 +1,7 @@
 #![allow(warnings)]
 #![allow(clippy::pedantic)]
 
-//! Adversarial tests for extreme FPR values — Jules missed these.
+//! Adversarial tests for extreme FPR values. Jules missed these.
 //!
 //! These tests verify that NgramBloom::with_target_fpr handles extreme
 //! false positive rate values without panicking or producing invalid results.
@@ -18,7 +18,7 @@ use flashsieve::NgramBloom;
 /// Tests that extremely low FPR values are handled gracefully (clamped).
 #[test]
 fn fpr_extremely_low_value() {
-    // FPR of 1e-100 is impossibly low — should clamp to minimum, not error
+    // FPR of 1e-100 is impossibly low, should clamp to minimum, not error
     let result = NgramBloom::with_target_fpr(1e-100, 1000);
     assert!(
         result.is_ok(),
@@ -44,7 +44,7 @@ fn fpr_extremely_low_value() {
 /// Tests that extremely high FPR values are handled gracefully (clamped).
 #[test]
 fn fpr_extremely_high_value() {
-    // FPR of 1.0 - 1e-15 is essentially 100% — should clamp to maximum
+    // FPR of 1.0 - 1e-15 is essentially 100%, should clamp to maximum
     let result = NgramBloom::with_target_fpr(1.0 - 1e-15, 1000);
     assert!(
         result.is_ok(),
@@ -105,9 +105,9 @@ fn fpr_fifty_percent() {
 /// Tests negative FPR (should be handled gracefully).
 #[test]
 fn fpr_negative() {
-    // Negative FPR is mathematically impossible — should clamp or error gracefully
+    // Negative FPR is mathematically impossible, should clamp or error gracefully
     let result = NgramBloom::with_target_fpr(-0.01, 1000);
-    // Could either succeed (clamped to 0) or error — both are acceptable
+    // Could either succeed (clamped to 0) or error, both are acceptable
     // The important thing is it doesn't panic
     let _ = result;
 }
@@ -115,9 +115,9 @@ fn fpr_negative() {
 /// Tests FPR > 1.0 (should be handled gracefully).
 #[test]
 fn fpr_greater_than_one() {
-    // FPR > 1.0 is mathematically impossible — should clamp or error gracefully
+    // FPR > 1.0 is mathematically impossible, should clamp or error gracefully
     let result = NgramBloom::with_target_fpr(1.5, 1000);
-    // Could either succeed (clamped to 1) or error — both are acceptable
+    // Could either succeed (clamped to 1) or error, both are acceptable
     // The important thing is it doesn't panic
     let _ = result;
 }
@@ -192,8 +192,8 @@ fn fpr_achieves_target() {
 
     // Insert expected_items random n-grams
     for _ in 0..expected_items {
-        let a = rng.gen();
-        let b = rng.gen();
+        let a = rng.random();
+        let b = rng.random();
         bloom.insert_ngram(a, b);
         inserted.insert((a, b));
     }
@@ -202,8 +202,8 @@ fn fpr_achieves_target() {
     let mut false_positives = 0;
     let mut tested = 0;
     for _ in 0..num_tests {
-        let a = rng.gen::<u8>();
-        let b = rng.gen::<u8>();
+        let a = rng.random::<u8>();
+        let b = rng.random::<u8>();
         if !inserted.contains(&(a, b)) {
             tested += 1;
             if bloom.maybe_contains(a, b) {
@@ -227,7 +227,7 @@ fn fpr_achieves_target() {
 /// Tests FPR with extremely large expected item count.
 #[test]
 fn fpr_extremely_large_expected_items() {
-    // 1 billion items — should not overflow
+    // 1 billion items, should not overflow
     let result = NgramBloom::with_target_fpr(0.01, 1_000_000_000);
 
     // This might succeed (with large allocation) or error gracefully

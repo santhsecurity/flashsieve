@@ -12,7 +12,7 @@ use flashsieve::{
 };
 
 #[test]
-fn legendary_unit_block_index_builder_valid() {
+fn depth_unit_block_index_builder_valid() {
     let builder = BlockIndexBuilder::new().block_size(1024).bloom_bits(2048);
     let data = vec![0x42; 1500];
     let index = builder.build(&data).unwrap();
@@ -22,7 +22,7 @@ fn legendary_unit_block_index_builder_valid() {
 }
 
 #[test]
-fn legendary_unit_byte_filter_single_pattern() {
+fn depth_unit_byte_filter_single_pattern() {
     let pattern = b"hello";
     let filter = ByteFilter::from_patterns(&[pattern.as_slice()]);
     assert_eq!(filter.required_count(), 4); // h, e, l, o
@@ -38,7 +38,7 @@ fn legendary_unit_byte_filter_single_pattern() {
 }
 
 #[test]
-fn legendary_unit_byte_filter_multi_pattern() {
+fn depth_unit_byte_filter_multi_pattern() {
     let filter = ByteFilter::from_patterns(&[b"abc".as_slice(), b"def".as_slice()]);
     let hist_abc = ByteHistogram::from_block(b"a_b_c");
     let hist_def = ByteHistogram::from_block(b"d_e_f");
@@ -50,7 +50,7 @@ fn legendary_unit_byte_filter_multi_pattern() {
 }
 
 #[test]
-fn legendary_unit_ngram_filter_creation() {
+fn depth_unit_ngram_filter_creation() {
     let filter = NgramFilter::from_patterns(&[b"test".as_slice()]);
     let bloom_match = flashsieve::NgramBloom::from_block(b"this is a test", 1024).unwrap();
     let bloom_miss = flashsieve::NgramBloom::from_block(b"this is a tes", 1024).unwrap();
@@ -62,7 +62,7 @@ fn legendary_unit_ngram_filter_creation() {
 }
 
 #[test]
-fn legendary_unit_ngram_filter_short_pattern() {
+fn depth_unit_ngram_filter_short_pattern() {
     // Patterns < 2 bytes contribute no n-grams, matching ANY bloom.
     let filter = NgramFilter::from_patterns(&[b"a".as_slice()]);
     let bloom = flashsieve::NgramBloom::from_block(b"xyz", 1024).unwrap();
@@ -70,7 +70,7 @@ fn legendary_unit_ngram_filter_short_pattern() {
 }
 
 #[test]
-fn legendary_unit_composite_filter_and() {
+fn depth_unit_composite_filter_and() {
     let bf = ByteFilter::from_patterns(&[b"a".as_slice()]);
     let nf = NgramFilter::from_patterns(&[b"ab".as_slice()]);
     let filter = CompositeFilter::combine(
@@ -96,7 +96,7 @@ fn legendary_unit_composite_filter_and() {
 }
 
 #[test]
-fn legendary_unit_composite_filter_or() {
+fn depth_unit_composite_filter_or() {
     let bf = ByteFilter::from_patterns(&[b"z".as_slice()]);
     let nf = NgramFilter::from_patterns(&[b"ab".as_slice()]);
     let filter = CompositeFilter::combine(

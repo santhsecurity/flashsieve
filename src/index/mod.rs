@@ -56,7 +56,7 @@ mod codec;
 mod query;
 
 pub(crate) use codec::{
-    parse_serialized_index_header, read_u64_le_checked, EXACT_PAIR_TABLE_SIZE,
+    crc32_simple, parse_serialized_index_header, read_u64_le_checked, EXACT_PAIR_TABLE_SIZE,
     MIN_SERIALIZED_BLOCK_LEN, SERIALIZED_BLOOM_HEADER_LEN, SERIALIZED_HISTOGRAM_LEN,
 };
 pub use query::CandidateRange;
@@ -98,7 +98,9 @@ impl BlockIndex {
         histograms: Vec<ByteHistogram>,
         blooms: Vec<NgramBloom>,
     ) -> Self {
-        Self::new_with_last_byte(block_size, total_len, histograms, blooms, None)
+        // Public constructor: pass 0 for configured_bloom_bits, meaning "derive
+        // the bit count from the supplied blooms" (unchanged behavior).
+        Self::new_with_last_byte(block_size, total_len, histograms, blooms, None, 0)
     }
 
     #[must_use]
@@ -108,8 +110,18 @@ impl BlockIndex {
         histograms: Vec<ByteHistogram>,
         blooms: Vec<NgramBloom>,
         last_byte: Option<u8>,
+        configured_bloom_bits: usize,
     ) -> Self {
-        let bloom_bits = blooms.first().map_or(0, |bloom| bloom.raw_parts().0);
+        // Derive the bit count from the first bloom when blocks exist: that is
+        // the ACTUAL (power-of-two-rounded) size the blooms were built with and
+        // the value serialization stores per block, so round-trips stay exact.
+        // Only when the index is EMPTY (no blooms to derive from) fall back to
+        // the caller's configured bit count, so an empty builder-built index
+        // still retains its bloom_bits and future block appends can size their
+        // blooms. The public `new` passes 0, giving the original derive-or-0.
+        let bloom_bits = blooms
+            .first()
+            .map_or(configured_bloom_bits, |bloom| bloom.raw_parts().0);
         Self {
             block_size,
             bloom_bits,
@@ -148,6 +160,26 @@ impl BlockIndex {
     #[must_use]
     pub fn block_count(&self) -> usize {
         self.histograms.len()
+    }
+
+    /// Return the per-block bloom filter bit count this index is configured for.
+    ///
+    /// Preserved from the builder configuration even for an empty index (zero
+    /// blocks), so future block appends can size their blooms consistently. Named
+    /// to avoid clashing with the crate-internal append resolver
+    /// `bloom_bits(&self) -> Result<usize>` in `incremental`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use flashsieve::BlockIndexBuilder;
+    ///
+    /// let empty = BlockIndexBuilder::new().bloom_bits(4096).build(b"").unwrap();
+    /// assert_eq!(empty.configured_bloom_bits(), 4096);
+    /// ```
+    #[must_use]
+    pub fn configured_bloom_bits(&self) -> usize {
+        self.bloom_bits
     }
 
     /// Return the total indexed byte length.
@@ -228,7 +260,7 @@ mod tests {
     use crate::index::CandidateRange;
     use crate::{BlockIndexBuilder, ByteFilter, NgramFilter};
     use rand::rngs::StdRng;
-    use rand::{RngCore, SeedableRng};
+    use rand::{Rng, RngCore, SeedableRng};
 
     fn make_data(block_size: usize) -> Vec<u8> {
         let mut data = vec![b'x'; block_size * 4];
@@ -524,8 +556,8 @@ mod tests {
     fn from_bytes_arbitrary_input_never_panics() {
         let mut rng = StdRng::seed_from_u64(0xFEED_FACE);
         for _ in 0..10_000 {
-            let len = rng.gen_range(0..2000);
-            let data: Vec<u8> = (0..len).map(|_| rng.gen()).collect();
+            let len = rng.random_range(0..2000);
+            let data: Vec<u8> = (0..len).map(|_| rng.random()).collect();
             let _ = BlockIndex::from_bytes(&data);
             let _ = BlockIndex::from_bytes_checked(&data);
         }

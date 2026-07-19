@@ -28,7 +28,7 @@ fn test_partial_write_random_truncation() {
 
     // Simulate crashing and writing only a prefix of the file.
     for _ in 0..100 {
-        let truncate_len = rng.gen_range(1..base.len());
+        let truncate_len = rng.random_range(1..base.len());
         let truncated = &base[..truncate_len];
 
         let result = BlockIndex::from_bytes_checked(truncated);

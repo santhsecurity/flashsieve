@@ -1,4 +1,4 @@
-//! S-proptest-03 — flashsieve mass proptest: bloom/index invariants, no panic on arbitrary bytes.
+//! S-proptest-03 (flashsieve mass proptest: bloom/index invariants, no panic on arbitrary bytes).
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -21,6 +21,10 @@ macro_rules! flash_cases {
             proptest! {
                 #![proptest_config(ProptestConfig::with_cases(64))]
                 #[test]
+                // Some property cases exercise only `block` and legitimately
+                // ignore the generated `size` input; allow that without forcing
+                // an underscore that would break the cases which DO use `size`.
+                #[allow(unused_variables)]
                 fn $name(
                     $block in prop::collection::vec(any::<u8>(), 0..512),
                     $size in bloom_size(),

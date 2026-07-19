@@ -24,7 +24,7 @@ fn measured_fpr_matches_theoretical_estimate() {
 
     // Insert 1000 distinct random n-grams
     while inserted.len() < 1000 {
-        let pair = (rng.gen::<u8>(), rng.gen::<u8>());
+        let pair = (rng.random::<u8>(), rng.random::<u8>());
         if inserted.insert(pair) {
             bloom.insert_ngram(pair.0, pair.1);
         }
@@ -35,7 +35,7 @@ fn measured_fpr_matches_theoretical_estimate() {
     let mut false_positives = 0_usize;
     let mut trials = 0_usize;
     for _ in 0..50_000 {
-        let pair = (rng.gen::<u8>(), rng.gen::<u8>());
+        let pair = (rng.random::<u8>(), rng.random::<u8>());
         if inserted.contains(&pair) {
             continue;
         }
@@ -68,7 +68,7 @@ fn exact_pair_table_eliminates_all_false_positives() {
     let mut inserted = std::collections::HashSet::new();
 
     while inserted.len() < 2000 {
-        let pair = (rng.gen::<u8>(), rng.gen::<u8>());
+        let pair = (rng.random::<u8>(), rng.random::<u8>());
         if inserted.insert(pair) {
             bloom.insert_ngram(pair.0, pair.1);
         }
@@ -85,7 +85,7 @@ fn exact_pair_table_eliminates_all_false_positives() {
             );
             assert!(
                 !was_inserted || contains,
-                "false negative for ({a}, {b}) — exact-pair table broken"
+                "false negative for ({a}, {b}), exact-pair table broken"
             );
         }
     }
@@ -101,7 +101,7 @@ fn larger_filters_reduce_fpr_monotonically() {
         let mut bloom = NgramBloom::new(num_bits).unwrap();
         let mut inserted = std::collections::HashSet::new();
         while inserted.len() < 500 {
-            let pair = (rng.gen::<u8>(), rng.gen::<u8>());
+            let pair = (rng.random::<u8>(), rng.random::<u8>());
             if inserted.insert(pair) {
                 bloom.insert_ngram(pair.0, pair.1);
             }
@@ -110,7 +110,7 @@ fn larger_filters_reduce_fpr_monotonically() {
         let mut fp = 0_usize;
         let mut trials = 0_usize;
         for _ in 0..20_000 {
-            let pair = (rng.gen::<u8>(), rng.gen::<u8>());
+            let pair = (rng.random::<u8>(), rng.random::<u8>());
             if inserted.contains(&pair) {
                 continue;
             }

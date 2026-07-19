@@ -3,7 +3,7 @@
 **Date:** 2026-04-06  
 **Auditor:** Kimi Code CLI  
 **Scope:** `libs/performance/indexing/flashsieve` bloom prefilter  
-**Risk Level:** CRITICAL — A single false negative means malware goes undetected at internet scale.
+**Risk Level:** CRITICAL: A single false negative means malware goes undetected at internet scale.
 
 ---
 
@@ -11,11 +11,11 @@
 
 The flashsieve bloom prefilter is a security-critical component that determines which blocks might contain malware signatures. **A false negative at this layer means malware is silently skipped.** This audit verifies five critical properties:
 
-1. **union_ngrams optimization** — MUST NOT cause false negatives
-2. **N-gram extraction** — MUST correctly handle patterns shorter than 3 bytes
-3. **Hash function** — MUST distribute uniformly to prevent saturation
-4. **Memory sizing** — MUST fit in L2 cache for 100K patterns
-5. **Concurrent access** — MUST be race-free with 100 threads
+1. **union_ngrams optimization**: MUST NOT cause false negatives
+2. **N-gram extraction**: MUST correctly handle patterns shorter than 3 bytes
+3. **Hash function**: MUST distribute uniformly to prevent saturation
+4. **Memory sizing**: MUST fit in L2 cache for 100K patterns
+5. **Concurrent access**: MUST be race-free with 100 threads
 
 **Status:** ✅ All critical properties verified with adversarial tests.
 
@@ -40,12 +40,12 @@ if !self.union_ngrams.is_empty() && !bloom.maybe_contains_any(&self.union_ngrams
 ```
 
 ### Adversarial Tests Added
-- `union_ngrams_optimization_zero_fnr_theorem` — Verifies pattern detection with union optimization
-- `union_ngrams_rejection_is_mathematically_sound` — Verifies rejection correctness
-- `union_ngrams_stress_100_patterns` — 100 patterns, each verified detectable
-- `union_ngrams_with_exact_pairs_table` — Works with exact-pairs table (≥4096 bits)
+- `union_ngrams_optimization_zero_fnr_theorem`: Verifies pattern detection with union optimization
+- `union_ngrams_rejection_is_mathematically_sound`: Verifies rejection correctness
+- `union_ngrams_stress_100_patterns`: 100 patterns, each verified detectable
+- `union_ngrams_with_exact_pairs_table`: Works with exact-pairs table (≥4096 bits)
 
-**Status:** ✅ VERIFIED — Zero false negatives by mathematical proof + exhaustive testing.
+**Status:** ✅ VERIFIED: Zero false negatives by mathematical proof + exhaustive testing.
 
 ---
 
@@ -72,12 +72,12 @@ if pattern.len() >= 2 {
 ```
 
 ### Adversarial Tests Added
-- `single_byte_pattern_no_panic` — No panic with 1-byte patterns
-- `empty_pattern_no_panic` — No panic with empty patterns
-- `two_byte_pattern_exact_ngram` — Verifies 2-byte pattern detection
-- `three_byte_pattern_two_ngrams` — Verifies 3-byte pattern with 2 n-grams
+- `single_byte_pattern_no_panic`: No panic with 1-byte patterns
+- `empty_pattern_no_panic`: No panic with empty patterns
+- `two_byte_pattern_exact_ngram`: Verifies 2-byte pattern detection
+- `three_byte_pattern_two_ngrams`: Verifies 3-byte pattern with 2 n-grams
 
-**Status:** ✅ VERIFIED — Short patterns handled correctly; no false negatives.
+**Status:** ✅ VERIFIED: Short patterns handled correctly; no false negatives.
 
 ---
 
@@ -97,20 +97,20 @@ let h2 = h2.max(1);  // Ensure non-zero
 ```
 
 ### Key Properties Verified
-1. **Second hash never zero** — Required for double-hashing correctness
-2. **Avalanche property** — ~50% bit flip on input change
-3. **Collision resistance** — Better than FNV-1a on random pairs
-4. **Uniform distribution** — Bits evenly distributed across words
+1. **Second hash never zero**: Required for double-hashing correctness
+2. **Avalanche property**: ~50% bit flip on input change
+3. **Collision resistance**: Better than FNV-1a on random pairs
+4. **Uniform distribution**: Bits evenly distributed across words
 
 ### Adversarial Tests Added
-- `hash_distribution_all_pairs_exhaustive` — All 65536 n-grams, zero FNR
-- `hash_uniformity_fill_ratio` — Coefficient of variation < 0.5
-- `hash_collision_clustering_resistance` — Pathological inputs don't cluster
-- `hash_avalanche_property` — Small input changes → large output changes
-- `double_hash_distinctness` — k=3 distinct hash positions probed
-- `hash_adversarial_input_resistance` — All-zero, all-0xFF, repeating patterns
+- `hash_distribution_all_pairs_exhaustive`: All 65536 n-grams, zero FNR
+- `hash_uniformity_fill_ratio`: Coefficient of variation < 0.5
+- `hash_collision_clustering_resistance`: Pathological inputs don't cluster
+- `hash_avalanche_property`: Small input changes → large output changes
+- `double_hash_distinctness`: k=3 distinct hash positions probed
+- `hash_adversarial_input_resistance`: All-zero, all-0xFF, repeating patterns
 
-**Status:** ✅ VERIFIED — wyhash provides uniform distribution; zero false negatives.
+**Status:** ✅ VERIFIED (wyhash provides uniform distribution; zero false negatives).
 
 ---
 
@@ -120,32 +120,32 @@ let h2 = h2.max(1);  // Ensure non-zero
 
 | Bits | Bytes | Exact-Pairs Table | Total | L2 Cache Fit |
 |------|-------|------------------|-------|--------------|
-| 1024 | 128 | — | 128 B | ✅ |
-| 2048 | 256 | — | 256 B | ✅ |
+| 1024 | 128 | | 128 B | ✅ |
+| 2048 | 256 | | 256 B | ✅ |
 | 4096 | 512 | 64 KB | 64.5 KB | ✅ |
 | 8192 | 1 KB | 64 KB | 65 KB | ✅ |
 
 ### 100K Patterns Memory Analysis
 - **Pattern n-grams:** ~2M total n-grams across 100K patterns (avg 20 bytes/pattern)
 - **Unique union n-grams:** ~5,000-10,000 (high deduplication from shared substrings)
-- **Filter memory:** O(unique_ngrams), not O(patterns) — approximately a few MB
+- **Filter memory:** O(unique_ngrams), not O(patterns), approximately a few MB
 - **Per-block bloom:** 512 bytes (4096 bits) + optional 64KB exact-pairs
 
 ### L2 Cache Efficiency
 The **4096-bit configuration** is optimal:
-- Bloom filter: 512 bytes — fits in L1
-- Exact-pairs table: 64 KB — fits in L2
+- Bloom filter: 512 bytes, fits in L1
+- Exact-pairs table: 64 KB, fits in L2
 - Provides **zero FPR** for 2-byte n-gram queries
 
 ### Adversarial Tests Added
-- `bloom_size_for_100k_patterns` — Memory scaling verification
-- `l2_cache_fit_analysis` — Cache efficiency verification
-- `blocked_vs_standard_bloom_memory` — Memory overhead comparison
-- `memory_scaling_sublinear` — Sub-linear memory growth
-- `compact_bloom_l1_cache_fit` — Half-size bloom for L1 fit
-- `memory_100k_patterns_no_oom` — No OOM with 100K patterns
+- `bloom_size_for_100k_patterns`: Memory scaling verification
+- `l2_cache_fit_analysis`: Cache efficiency verification
+- `blocked_vs_standard_bloom_memory`: Memory overhead comparison
+- `memory_scaling_sublinear`: Sub-linear memory growth
+- `compact_bloom_l1_cache_fit`: Half-size bloom for L1 fit
+- `memory_100k_patterns_no_oom`: No OOM with 100K patterns
 
-**Status:** ✅ VERIFIED — 100K patterns fit comfortably in L2 cache per core.
+**Status:** ✅ VERIFIED: 100K patterns fit comfortably in L2 cache per core.
 
 ---
 
@@ -163,26 +163,26 @@ pub struct NgramBloom {
 }
 ```
 
-This design provides **natural thread safety** — no locks needed for reads.
+This design provides **natural thread safety**: no locks needed for reads.
 
 ### Verified Properties
-1. **Send + Sync traits** — Types are Send + Sync
-2. **No interior mutability** — All fields are read-only after construction
-3. **Lock-free reads** — Multiple threads can query concurrently
-4. **No data races** — Verified with 100 threads × 1000 iterations each
+1. **Send + Sync traits**: Types are Send + Sync
+2. **No interior mutability**: All fields are read-only after construction
+3. **Lock-free reads**: Multiple threads can query concurrently
+4. **No data races**: Verified with 100 threads × 1000 iterations each
 
 ### Adversarial Tests Added
-- `concurrent_100_threads_shared_bloom_reads` — 100 threads querying shared bloom
-- `concurrent_100_threads_build_own_bloom` — 100 threads building blooms
-- `concurrent_bloom_union_operations` — Concurrent union operations
-- `concurrent_exact_pairs_table_reads` — Concurrent exact-pairs queries
-- `concurrent_blocked_bloom_reads` — Blocked bloom concurrent access
-- `concurrent_stress_barrier_synchronization` — Synchronized contention
-- `concurrent_mmap_index_reads` — Mmap-based concurrent reads
-- `concurrent_filter_building` — Concurrent filter construction
-- `filter_send_sync_traits` — Compile-time trait verification
+- `concurrent_100_threads_shared_bloom_reads`: 100 threads querying shared bloom
+- `concurrent_100_threads_build_own_bloom`: 100 threads building blooms
+- `concurrent_bloom_union_operations`: Concurrent union operations
+- `concurrent_exact_pairs_table_reads`: Concurrent exact-pairs queries
+- `concurrent_blocked_bloom_reads`: Blocked bloom concurrent access
+- `concurrent_stress_barrier_synchronization`: Synchronized contention
+- `concurrent_mmap_index_reads`: Mmap-based concurrent reads
+- `concurrent_filter_building`: Concurrent filter construction
+- `filter_send_sync_traits`: Compile-time trait verification
 
-**Status:** ✅ VERIFIED — No races detected with 100 threads.
+**Status:** ✅ VERIFIED: No races detected with 100 threads.
 
 ---
 
@@ -205,11 +205,11 @@ This design provides **natural thread safety** — no locks needed for reads.
 
 All five critical properties have been verified:
 
-1. ✅ **union_ngrams optimization** — Zero false negatives by mathematical proof
-2. ✅ **N-gram extraction** — Correct handling of patterns down to 1 byte
-3. ✅ **Hash function** — Uniform distribution, no collision clustering
-4. ✅ **Memory sizing** — 100K patterns fit in L2 cache (64.5 KB per bloom)
-5. ✅ **Concurrent access** — Race-free with 100 threads
+1. ✅ **union_ngrams optimization**: Zero false negatives by mathematical proof
+2. ✅ **N-gram extraction**: Correct handling of patterns down to 1 byte
+3. ✅ **Hash function**: Uniform distribution, no collision clustering
+4. ✅ **Memory sizing**: 100K patterns fit in L2 cache (64.5 KB per bloom)
+5. ✅ **Concurrent access**: Race-free with 100 threads
 
 The adversarial test suite (`tests/adversarial/`) provides continuous verification
 of these properties. Any regression will be caught immediately.
@@ -218,11 +218,11 @@ of these properties. Any regression will be caught immediately.
 
 ## Recommendations
 
-1. **Keep exact-pairs threshold at 4096 bits** — Provides zero FPR for internet scale
-2. **Monitor bloom filter fill ratio** — Above 50% fill, FPR rises significantly
-3. **Use blocked blooms for cache-line locality** — 64-byte blocks reduce cache misses
-4. **Keep patterns ≥ 2 bytes** — 1-byte patterns have no n-grams for filtering
-5. **Run adversarial tests in CI** — `cargo test --test adversarial_suite`
+1. **Keep exact-pairs threshold at 4096 bits**: Provides zero FPR for internet scale
+2. **Monitor bloom filter fill ratio**: Above 50% fill, FPR rises significantly
+3. **Use blocked blooms for cache-line locality**: 64-byte blocks reduce cache misses
+4. **Keep patterns ≥ 2 bytes**: 1-byte patterns have no n-grams for filtering
+5. **Run adversarial tests in CI**: `cargo test --test adversarial_suite`
 
 ---
 

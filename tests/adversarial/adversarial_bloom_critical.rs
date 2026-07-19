@@ -7,13 +7,13 @@
     clippy::unreadable_literal
 )]
 
-//! CRITICAL adversarial tests for flashsieve bloom filter — designed to BREAK.
+//! CRITICAL adversarial tests for flashsieve bloom filter (designed to BREAK).
 //!
 //! A single bloom filter false negative means malware goes undetected at
 //! internet scale. These tests probe edge cases that could cause false
 //! negatives, panics, or resource exhaustion.
 //!
-//! CORE LAW 4: Every finding is CRITICAL — at internet scale, a "low" bug
+//! CORE LAW 4: Every finding is CRITICAL, at internet scale, a "low" bug
 //! corrupts billions of records.
 #![allow(
     clippy::cast_possible_truncation,
@@ -27,7 +27,7 @@ use std::sync::{Arc, Barrier};
 use std::thread;
 
 // =============================================================================
-// TEST 1: Bloom filter with 0 patterns — must not panic, must reject everything
+// TEST 1: Bloom filter with 0 patterns, must not panic, must reject everything
 // =============================================================================
 
 #[test]
@@ -41,7 +41,7 @@ fn ngram_filter_empty_patterns_rejects_all() {
     let matches = filter.matches_bloom(&bloom);
     assert!(
         !matches,
-        "CRITICAL FINDING: Empty pattern filter accepted a bloom — must reject all"
+        "CRITICAL FINDING: Empty pattern filter accepted a bloom, must reject all"
     );
 
     // Also test with empty bloom
@@ -49,7 +49,7 @@ fn ngram_filter_empty_patterns_rejects_all() {
     let matches = filter.matches_bloom(&empty_bloom);
     assert!(
         !matches,
-        "CRITICAL FINDING: Empty pattern filter accepted empty bloom — must reject all"
+        "CRITICAL FINDING: Empty pattern filter accepted empty bloom, must reject all"
     );
 }
 
@@ -63,12 +63,12 @@ fn byte_filter_empty_patterns_rejects_all() {
     let matches = filter.matches_histogram(&hist);
     assert!(
         !matches,
-        "CRITICAL FINDING: Empty pattern byte filter accepted histogram — must reject all"
+        "CRITICAL FINDING: Empty pattern byte filter accepted histogram, must reject all"
     );
 }
 
 // =============================================================================
-// TEST 2: Bloom filter with 100K patterns — must not OOM
+// TEST 2: Bloom filter with 100K patterns, must not OOM
 // =============================================================================
 
 #[test]
@@ -95,7 +95,7 @@ fn ngram_filter_100k_patterns_no_oom() {
     // This should complete without OOM or panic
     let filter = NgramFilter::from_patterns(&patterns);
 
-    // Verify the filter works correctly — search for a pattern we know exists
+    // Verify the filter works correctly, search for a pattern we know exists
     let target_pattern = &pattern_data[50_000];
     let bloom = NgramBloom::from_block(target_pattern, 8192).unwrap();
 
@@ -136,7 +136,7 @@ fn bloom_hash_collision_boundary_zero_fnr() {
     // Build filter with just this pattern
     let filter = NgramFilter::from_patterns(&[pattern.as_slice()]);
 
-    // Must match — zero false negatives even with extreme collisions
+    // Must match, zero false negatives even with extreme collisions
     assert!(
         filter.matches_bloom(&bloom),
         "CRITICAL FINDING: False negative at hash collision boundary!"
@@ -166,7 +166,7 @@ fn bloom_saturated_filter_no_false_negatives() {
 }
 
 // =============================================================================
-// TEST 4: union_ngrams optimization — verify zero false negatives
+// TEST 4: union_ngrams optimization, verify zero false negatives
 // =============================================================================
 
 #[test]
@@ -179,21 +179,21 @@ fn union_ngrams_optimization_no_false_negatives() {
     let pattern2 = b"def";
     let filter = NgramFilter::from_patterns(&[pattern1.as_slice(), pattern2.as_slice()]);
 
-    // File containing pattern1 — must NOT be rejected
+    // File containing pattern1, must NOT be rejected
     let file_with_pattern1 = NgramBloom::from_block(b"xxabcxx", 1024).unwrap();
     assert!(
         filter.matches_bloom(&file_with_pattern1),
         "CRITICAL FINDING: union_ngrams optimization caused false negative for pattern1!"
     );
 
-    // File containing pattern2 — must NOT be rejected by union_ngrams
+    // File containing pattern2, must NOT be rejected by union_ngrams
     let file_with_pattern2 = NgramBloom::from_block(b"xxdefxx", 1024).unwrap();
     assert!(
         filter.matches_bloom(&file_with_pattern2),
         "CRITICAL FINDING: union_ngrams optimization caused false negative for pattern2!"
     );
 
-    // File containing BOTH patterns — must match
+    // File containing BOTH patterns, must match
     let file_with_both = NgramBloom::from_block(b"abcdef", 1024).unwrap();
     assert!(
         filter.matches_bloom(&file_with_both),
@@ -224,7 +224,7 @@ fn union_ngrams_rejection_is_correct() {
     let any_present = disjoint_file.maybe_contains_any(&pattern_ngrams);
 
     if !any_present {
-        // File should be correctly rejected — verify matches_bloom returns false
+        // File should be correctly rejected, verify matches_bloom returns false
         let matches = filter.matches_bloom(&disjoint_file);
         assert!(
             !matches,
@@ -235,7 +235,7 @@ fn union_ngrams_rejection_is_correct() {
 }
 
 // =============================================================================
-// TEST 5: Empty file input — must not panic
+// TEST 5: Empty file input, must not panic
 // =============================================================================
 
 #[test]
@@ -255,15 +255,15 @@ fn empty_file_input_no_panic() {
 #[test]
 fn empty_file_single_byte_pattern() {
     // Single-byte patterns have no 2-byte n-grams
-    // This is an edge case — single-byte patterns technically "match" any file
+    // This is an edge case, single-byte patterns technically "match" any file
     // because there are no n-grams to check (vacuous truth)
     let empty_bloom = NgramBloom::from_block(b"", 1024).unwrap();
     let single_byte_filter = NgramFilter::from_patterns(&[b"a".as_slice()]);
 
     // Single-byte pattern has no n-grams, so it technically "matches"
-    // This is the documented behavior — patterns < 2 bytes match any bloom
+    // This is the documented behavior, patterns < 2 bytes match any bloom
     let _result = single_byte_filter.matches_bloom(&empty_bloom);
-    // We just verify this doesn't panic — the semantic is documented
+    // We just verify this doesn't panic, the semantic is documented
 }
 
 // =============================================================================
@@ -330,7 +330,7 @@ fn binary_null_bytes_between_pattern_chars() {
 
     // "AB" n-gram is NOT in data_with_null, so should not match
     let _matches = filter.matches_bloom(&bloom);
-    // This is actually expected behavior — null bytes break the n-gram
+    // This is actually expected behavior, null bytes break the n-gram
     // We verify the behavior is consistent
 
     // Now verify that the ACTUAL n-grams are detected
@@ -358,7 +358,7 @@ fn binary_all_null_bytes() {
 }
 
 // =============================================================================
-// TEST 8: Concurrent access from 100 threads — must not race
+// TEST 8: Concurrent access from 100 threads, must not race
 // =============================================================================
 
 #[test]
@@ -407,7 +407,7 @@ fn concurrent_100_threads_no_race() {
     for handle in handles {
         handle
             .join()
-            .expect("Thread panicked — possible race condition!");
+            .expect("Thread panicked, possible race condition!");
     }
 }
 
@@ -654,7 +654,7 @@ fn proptest_style_random_patterns() {
                     pattern
                 );
             }
-            // If not all n-grams present, bloom may match (false positive) or not — both OK
+            // If not all n-grams present, bloom may match (false positive) or not, both OK
         }
     }
 }

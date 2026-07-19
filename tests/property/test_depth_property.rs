@@ -13,7 +13,7 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    fn legendary_property_zero_false_negatives(
+    fn depth_property_zero_false_negatives(
         data in prop::collection::vec(any::<u8>(), 256..2048),
         start_idx in 0usize..2048,
         len in 2usize..100
@@ -52,7 +52,7 @@ proptest! {
     }
 
     #[test]
-    fn legendary_property_streaming_vs_contiguous(
+    fn depth_property_streaming_vs_contiguous(
         data in prop::collection::vec(any::<u8>(), 256..1024),
     ) {
         // Pad data to exact block size multiple
@@ -72,7 +72,7 @@ proptest! {
     }
 
     #[test]
-    fn legendary_property_serialization_roundtrip(
+    fn depth_property_serialization_roundtrip(
         data in prop::collection::vec(any::<u8>(), 256..1024),
     ) {
         let index = BlockIndexBuilder::new().block_size(256).bloom_bits(512).build(&data).unwrap();

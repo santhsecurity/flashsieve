@@ -274,7 +274,7 @@ fn ngram_filter_false_positive_rate() {
 
     // Insert 1000 random n-grams
     let mut inserted = std::collections::HashSet::new();
-    let data: Vec<u8> = (0..1001).map(|_| rng.gen()).collect();
+    let data: Vec<u8> = (0..1001).map(|_| rng.random()).collect();
     let bloom = NgramBloom::from_block(&data, 65536).expect("expected");
 
     // Collect inserted pairs
@@ -286,8 +286,8 @@ fn ngram_filter_false_positive_rate() {
     let mut false_positives = 0;
     let mut trials = 0;
     for _ in 0..10000 {
-        let a = rng.gen::<u8>();
-        let b = rng.gen::<u8>();
+        let a = rng.random::<u8>();
+        let b = rng.random::<u8>();
         if inserted.contains(&(a, b)) {
             continue;
         }
@@ -311,7 +311,7 @@ fn ngram_filter_zero_false_negatives_invariant() {
 
     for _ in 0..100 {
         // Generate random data
-        let data: Vec<u8> = (0..rng.gen_range(10..1000)).map(|_| rng.gen()).collect();
+        let data: Vec<u8> = (0..rng.random_range(10..1000)).map(|_| rng.random()).collect();
         let bloom = NgramBloom::from_block(&data, 32768).expect("expected");
 
         // Every n-gram in the data MUST be detected
@@ -518,8 +518,8 @@ fn scale_ten_thousand_patterns() {
     // Generate 10K random patterns
     let patterns: Vec<Vec<u8>> = (0..10_000)
         .map(|_| {
-            let len = rng.gen_range(3..50);
-            (0..len).map(|_| rng.gen::<u8>()).collect()
+            let len = rng.random_range(3..50);
+            (0..len).map(|_| rng.random::<u8>()).collect()
         })
         .collect();
     let pattern_refs: Vec<&[u8]> = patterns.iter().map(std::vec::Vec::as_slice).collect();
@@ -540,7 +540,7 @@ fn scale_ten_thousand_patterns() {
 #[test]
 fn scale_one_mb_data_block() {
     let mut rng = StdRng::seed_from_u64(0x10B0_DA7A);
-    let data: Vec<u8> = (0..(1024 * 1024)).map(|_| rng.gen()).collect();
+    let data: Vec<u8> = (0..(1024 * 1024)).map(|_| rng.random()).collect();
 
     let start = Instant::now();
     let bloom = NgramBloom::from_block(&data, 65536).expect("expected");
@@ -565,7 +565,7 @@ fn scale_one_mb_data_block() {
 #[test]
 fn benchmark_from_block_1mb_performance() {
     let mut rng = StdRng::seed_from_u64(0xB3AC_1001);
-    let data: Vec<u8> = (0..(1024 * 1024)).map(|_| rng.gen()).collect();
+    let data: Vec<u8> = (0..(1024 * 1024)).map(|_| rng.random()).collect();
 
     let start = Instant::now();
     let _bloom = NgramBloom::from_block(&data, 65536).expect("expected");
@@ -870,7 +870,7 @@ fn blocked_bloom_zero_false_negatives() {
     // Insert 10000 random n-grams
     let mut inserted = std::collections::HashSet::new();
     while inserted.len() < 10000 {
-        let pair = (rng.gen::<u8>(), rng.gen::<u8>());
+        let pair = (rng.random::<u8>(), rng.random::<u8>());
         if inserted.insert(pair) {
             bloom.insert(pair.0, pair.1);
         }
@@ -893,7 +893,7 @@ fn blocked_bloom_false_positive_rate() {
 
     let mut inserted = std::collections::HashSet::new();
     while inserted.len() < 10000 {
-        let pair = (rng.gen::<u8>(), rng.gen::<u8>());
+        let pair = (rng.random::<u8>(), rng.random::<u8>());
         if inserted.insert(pair) {
             bloom.insert(pair.0, pair.1);
         }
@@ -903,7 +903,7 @@ fn blocked_bloom_false_positive_rate() {
     let mut false_positives = 0;
     let mut trials = 0;
     while trials < 10000 {
-        let pair = (rng.gen::<u8>(), rng.gen::<u8>());
+        let pair = (rng.random::<u8>(), rng.random::<u8>());
         if inserted.contains(&pair) {
             continue;
         }

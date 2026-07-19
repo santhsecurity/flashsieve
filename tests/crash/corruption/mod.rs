@@ -53,8 +53,8 @@ fn test_corruption_flip_random_bits() {
     for _ in 0..1000 {
         let mut corrupted = base.clone();
 
-        let flip_idx = rng.gen_range(4..corrupted.len()); // skip magic
-        let bit_idx = rng.gen_range(0..8);
+        let flip_idx = rng.random_range(4..corrupted.len()); // skip magic
+        let bit_idx = rng.random_range(0..8);
         corrupted[flip_idx] ^= 1 << bit_idx;
 
         match BlockIndex::from_bytes_checked(&corrupted) {
@@ -81,7 +81,7 @@ fn test_corruption_zero_random_pages() {
         let mut corrupted = base.clone();
 
         // Zero out a 4KB chunk
-        let start_idx = rng.gen_range(4..corrupted.len());
+        let start_idx = rng.random_range(4..corrupted.len());
         for i in start_idx..start_idx + 4096 {
             if i < corrupted.len() {
                 corrupted[i] = 0;

@@ -5,12 +5,12 @@
     clippy::uninlined_format_args,
     clippy::unwrap_used
 )]
-//! Adversarial tests for flashsieve — designed to BREAK the implementation.
+//! Adversarial tests for flashsieve (designed to BREAK the implementation).
 //!
 //! These tests probe edge cases, malformed inputs, and boundary conditions
 //! that could cause panics, incorrect results, or security vulnerabilities.
 //!
-//! LAW 5: Tests are designed to FAIL first — if a test passes, the engine
+//! LAW 5: Tests are designed to FAIL first, if a test passes, the engine
 //! handles the edge case. If it panics, that's a FINDING.
 
 use flashsieve::{
@@ -20,13 +20,13 @@ use std::sync::Arc;
 use std::thread;
 
 // =============================================================================
-// TEST 1: NgramBloom::new(0) — must error, not panic or succeed
+// TEST 1: NgramBloom::new(0), must error, not panic or succeed
 // =============================================================================
 
 #[test]
 fn ngram_bloom_new_zero_bits_must_error() {
     // Attempting to create a bloom filter with zero bits should fail gracefully.
-    // This is a fundamental invariant — a zero-bit bloom filter is meaningless.
+    // This is a fundamental invariant (a zero-bit bloom filter is meaningless).
     let result = NgramBloom::new(0);
     assert!(
         result.is_err(),
@@ -41,7 +41,7 @@ fn ngram_bloom_new_zero_bits_must_error() {
 #[test]
 fn block_index_from_bytes_truncated_at_every_offset() {
     // Create a valid serialized index, then truncate at every possible byte
-    // and verify we never panic — only return None or an error.
+    // and verify we never panic (only return None or an error).
     let block_size = 256;
     let data = vec![b'x'; block_size * 4];
     let original = BlockIndexBuilder::new()
@@ -64,7 +64,7 @@ fn block_index_from_bytes_truncated_at_every_offset() {
         // Result should be None (failure) not Some (success)
         assert!(
             result.unwrap().is_none(),
-            "FINDING: BlockIndex::from_bytes succeeded with truncated data at byte {} — should fail",
+            "FINDING: BlockIndex::from_bytes succeeded with truncated data at byte {}, should fail",
             truncate_at
         );
     }
@@ -92,7 +92,7 @@ fn block_index_from_bytes_crc_corruption_detected() {
         let result = flashsieve::BlockIndex::from_bytes_checked(&serialized);
         assert!(
             result.is_err(),
-            "FINDING: CRC did not detect corruption at byte position {} — data may be silently corrupted",
+            "FINDING: CRC did not detect corruption at byte position {}, data may be silently corrupted",
             pos
         );
         let err = result.unwrap_err();
@@ -157,8 +157,8 @@ fn ngram_bloom_from_raw_parts_mismatched_bits() {
     // Test case: num_bits = 0 with non-empty bits
     let bits = vec![0u64; 16];
     let result = NgramBloom::from_raw_parts(0, bits);
-    // num_bits = 0 requires 0 words, we provided 16 — this is acceptable (extra is ignored)
-    // But a bloom with 0 bits is degenerate — check behavior
+    // num_bits = 0 requires 0 words, we provided 16, this is acceptable (extra is ignored)
+    // But a bloom with 0 bits is degenerate, check behavior
     assert!(
         result.is_ok() || result.is_err(),
         "from_raw_parts(0, non_empty) should have defined behavior"
@@ -182,7 +182,7 @@ fn ngram_bloom_from_raw_parts_mismatched_bits() {
 
 #[test]
 fn builder_block_size_zero_must_error() {
-    // block_size = 0 is invalid — must fail, not panic or create empty index
+    // block_size = 0 is invalid, must fail, not panic or create empty index
     let result = BlockIndexBuilder::new().block_size(0).build(b"some data");
     assert!(
         result.is_err(),
@@ -210,7 +210,7 @@ fn builder_empty_data_behavior() {
     // Empty data should create an empty index (0 blocks), not panic.
     let result = BlockIndexBuilder::new().block_size(256).build(b"");
 
-    // Empty data with div_ceil(block_size) = 0 blocks — should succeed
+    // Empty data with div_ceil(block_size) = 0 blocks, should succeed
     assert!(
         result.is_ok(),
         "FINDING: Builder with empty data should succeed, got: {:?}",
@@ -398,7 +398,7 @@ fn block_index_from_bytes_malicious_histograms() {
     let crc = crc32_compute(&malicious);
     malicious.extend_from_slice(&crc.to_le_bytes());
 
-    // This should parse successfully — u32::MAX counts are valid (just large)
+    // This should parse successfully, u32::MAX counts are valid (just large)
     let result = BlockIndex::from_bytes(&malicious);
     assert!(
         result.is_some(),
@@ -416,7 +416,7 @@ fn bloom_filter_with_large_bits() {
     // This verifies no overflow occurs in calculations
     let large_bits = 1_000_000; // 1M bits = ~125KB, reasonable size
     let result = NgramBloom::new(large_bits);
-    // Should either succeed or fail gracefully — never panic
+    // Should either succeed or fail gracefully, never panic
     assert!(
         result.is_ok(),
         "FINDING: NgramBloom::new(1_000_000) should succeed or error gracefully"
@@ -471,7 +471,7 @@ fn query_with_malformed_patterns() {
     let result = std::panic::catch_unwind(|| {
         let _ = ByteFilter::from_patterns(empty_patterns);
     });
-    // Empty patterns may panic or error — we just verify no undefined behavior
+    // Empty patterns may panic or error, we just verify no undefined behavior
     let _ = result;
 
     // Query with single-byte patterns (no n-grams)

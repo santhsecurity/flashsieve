@@ -9,7 +9,7 @@
     clippy::uninlined_format_args,
     clippy::unwrap_used
 )]
-//! Legendary adversarial tests for flashsieve.
+//! Oneshot adversarial tests for flashsieve.
 //!
 //! This module contains comprehensive edge-case and adversarial tests
 //! to ensure robustness against unexpected inputs and usage patterns.
@@ -72,8 +72,8 @@ fn no_false_negatives_10000_inserts() {
 
     // Insert 10000 random n-grams
     for _ in 0..10000 {
-        let a = rng.gen();
-        let b = rng.gen();
+        let a = rng.random();
+        let b = rng.random();
         bloom.insert_ngram(a, b);
         inserted.push((a, b));
     }
@@ -129,8 +129,8 @@ fn fpr_within_theoretical_bound() {
 
     // Insert random items
     for _ in 0..num_inserts {
-        let a = rng.gen();
-        let b = rng.gen();
+        let a = rng.random();
+        let b = rng.random();
         bloom.insert_ngram(a, b);
         inserted.insert((a, b));
     }
@@ -139,8 +139,8 @@ fn fpr_within_theoretical_bound() {
     let mut false_positives = 0;
     let mut trials = 0;
     for _ in 0..num_tests {
-        let a = rng.gen();
-        let b = rng.gen();
+        let a = rng.random();
+        let b = rng.random();
         if !inserted.contains(&(a, b)) {
             trials += 1;
             if bloom.maybe_contains(a, b) {
@@ -276,9 +276,16 @@ fn zero_size_filter_rejected() {
 
 #[test]
 fn huge_item_count_handled() {
-    // Test with very large expected item count for with_target_fpr
-    let bloom = NgramBloom::with_target_fpr(0.01, 1_000_000_000).unwrap();
-    assert!(!bloom.raw_parts().1.is_empty());
+    // A 1e9-item / 1% FPR bloom would need ~12.3 billion bits (~1.5 GB). The
+    // builder caps bloom size and *rejects* such requests with BloomBitsTooLarge
+    // rather than attempting the allocation -- "handled" means failing closed, not
+    // OOMing. Assert the safety cap fires.
+    let result = NgramBloom::with_target_fpr(0.01, 1_000_000_000);
+    let was_ok = result.is_ok();
+    assert!(
+        matches!(result, Err(flashsieve::Error::BloomBitsTooLarge { .. })),
+        "expected BloomBitsTooLarge for an absurd item count (ok={was_ok})"
+    );
 }
 
 #[test]
@@ -640,7 +647,7 @@ fn random_data_no_panic() {
 
     for _ in 0..100 {
         let block_size = 256;
-        let num_blocks = rng.gen_range(1..10);
+        let num_blocks = rng.random_range(1..10);
         let mut data = vec![0u8; block_size * num_blocks];
         rng.fill_bytes(&mut data);
 
@@ -652,8 +659,8 @@ fn random_data_no_panic() {
 
         // Generate random patterns
         for _ in 0..10 {
-            let pattern_len = rng.gen_range(1..20);
-            let pattern: Vec<u8> = (0..pattern_len).map(|_| rng.gen()).collect();
+            let pattern_len = rng.random_range(1..20);
+            let pattern: Vec<u8> = (0..pattern_len).map(|_| rng.random()).collect();
 
             let byte_filter = ByteFilter::from_patterns(&[pattern.as_slice()]);
             let ngram_filter = NgramFilter::from_patterns(&[pattern.as_slice()]);

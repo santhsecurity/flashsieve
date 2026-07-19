@@ -79,8 +79,12 @@ fn break_it_incremental_watch_on_deleted_directory() {
     let mut watcher = IncrementalWatch::new(&path, config);
     drop(dir); // Delete directory
 
-    // Polling a deleted directory should ideally return no changes or an error.
-    let _changes = watcher.poll();
+    // Polling a deleted directory must fail loud (Error::Io), never silently
+    // report every known file as removed and corrupt the known-file set.
+    assert!(
+        watcher.poll().is_err(),
+        "poll on a deleted root must return an error, not a silent empty/mass-removal ChangeSet"
+    );
 }
 
 #[test]

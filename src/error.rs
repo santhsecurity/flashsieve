@@ -72,7 +72,7 @@ pub enum Error {
     /// The block count in the header exceeds what the data could possibly hold.
     ///
     /// This usually indicates corrupted or truncated serialized data.
-    #[error("block count overflow: header claims {claimed} blocks, max plausible {max_plausible}. Fix: the index file is likely corrupted — rebuild it.")]
+    #[error("block count overflow: header claims {claimed} blocks, max plausible {max_plausible}. Fix: the index file is likely corrupted, rebuild it.")]
     BlockCountOverflow {
         /// The block count from the header.
         claimed: u64,
@@ -83,7 +83,7 @@ pub enum Error {
     ///
     /// The data ended unexpectedly while reading histogram or bloom data
     /// for the specified block.
-    #[error("truncated block data at block index {block_index}. Fix: the index file is incomplete — rebuild it.")]
+    #[error("truncated block data at block index {block_index}. Fix: the index file is incomplete, rebuild it.")]
     TruncatedBlock {
         /// The zero-based block index that was being parsed.
         block_index: usize,
@@ -91,7 +91,7 @@ pub enum Error {
     /// CRC checksum mismatch (version >= 2 only).
     ///
     /// The data may be corrupted. Verify the integrity of the serialized data.
-    #[error("checksum mismatch: stored 0x{expected:08X}, computed 0x{computed:08X}. Fix: the index is corrupted — rebuild it from source data.")]
+    #[error("checksum mismatch: stored 0x{expected:08X}, computed 0x{computed:08X}. Fix: the index is corrupted, rebuild it from source data.")]
     ChecksumMismatch {
         /// The CRC stored in the data.
         expected: u32,
@@ -160,6 +160,19 @@ pub enum Error {
         total_len: usize,
         /// Block size in bytes.
         block_size: usize,
+    },
+    /// A source file scheduled for indexing could not be read.
+    ///
+    /// Failing loud (rather than silently skipping the file) preserves recall: a
+    /// skipped file is never indexed, so its content would be silently excluded
+    /// from every later query against the resulting index.
+    #[error("failed to read `{path}` for indexing: {source}. Fix: ensure the file is readable, or remove it from the change set.")]
+    Io {
+        /// The path that failed to read.
+        path: String,
+        /// The underlying I/O error.
+        #[source]
+        source: std::io::Error,
     },
 }
 

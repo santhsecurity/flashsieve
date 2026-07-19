@@ -118,7 +118,7 @@ impl BlockIndexBuilder {
             return Err(Error::ZeroBloomBits);
         }
 
-        // Allow unaligned data — the last block can be smaller than block_size.
+        // Allow unaligned data (the last block can be smaller than block_size).
         // Real files are almost never exact multiples of the block size.
         // A partial final block still gets a valid histogram and bloom filter.
         let mut histograms = Vec::new();
@@ -144,6 +144,7 @@ impl BlockIndexBuilder {
             histograms,
             blooms,
             last_byte,
+            self.bloom_bits,
         ))
     }
 
@@ -211,6 +212,7 @@ impl BlockIndexBuilder {
             histograms,
             blooms,
             last_byte,
+            self.bloom_bits,
         ))
     }
 }

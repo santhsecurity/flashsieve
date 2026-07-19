@@ -6,7 +6,7 @@
     clippy::unreadable_literal,
     clippy::unwrap_used
 )]
-//! Legendary benchmarks for flashsieve using Criterion.
+//! Oneshot benchmarks for flashsieve using Criterion.
 //!
 //! These benchmarks measure:
 //! - Insert throughput

@@ -130,7 +130,7 @@ fn concurrent_incremental_watch_polls_do_not_race() {
     // Establish baseline
     {
         let mut w = watcher.lock().unwrap();
-        let _ = w.poll();
+        w.poll().unwrap();
     }
 
     let mut handles = vec![];
@@ -142,8 +142,9 @@ fn concurrent_incremental_watch_polls_do_not_race() {
             let mut changes_seen = 0usize;
             for _ in 0..100 {
                 let mut guard = w.lock().unwrap();
-                let changes = guard.poll();
-                changes_seen += changes.len();
+                // A poll may legitimately fail with Error::Io when the mutator
+                // removes a file mid-walk; count only successful polls.
+                changes_seen += guard.poll().map_or(0, |c| c.len());
             }
             changes_seen
         }));
@@ -164,13 +165,13 @@ fn concurrent_incremental_watch_polls_do_not_race() {
     // Final poll to converge
     let converged = {
         let mut w = watcher.lock().unwrap();
-        w.poll()
+        w.poll().unwrap()
     };
 
-    // One more poll must be empty — stable state
+    // One more poll must be empty, stable state
     let stable = {
         let mut w = watcher.lock().unwrap();
-        w.poll()
+        w.poll().unwrap()
     };
     assert!(
         stable.is_empty(),
@@ -187,7 +188,7 @@ fn concurrent_incremental_watch_polls_do_not_race() {
     let _ = converged;
 }
 
-/// (5) CRC32 collision resistance — flip every bit position.
+/// (5) CRC32 collision resistance (flip every bit position).
 ///
 /// CRC32 is expected to detect all single-bit errors. For every byte in
 /// the transport packet and every bit in that byte, we flip the bit and

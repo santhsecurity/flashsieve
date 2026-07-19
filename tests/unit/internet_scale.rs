@@ -41,7 +41,7 @@ fn bloom_rejects_impossible_pair() {
     let bloom = NgramBloom::from_block(data, 4096).unwrap();
     // High-byte pairs like (0xFF, 0xFE) should not appear in ASCII data
     // (may be a false positive, but with 4096 bits it's unlikely)
-    // This is a probabilistic test — we check 10 rare pairs
+    // This is a probabilistic test, we check 10 rare pairs
     let mut rejections = 0;
     for a in 240u8..=255 {
         for b in 240u8..=255 {

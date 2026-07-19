@@ -295,28 +295,28 @@ fn union_ngrams_optimization_zero_fnr_theorem() {
     let pattern2 = b"def";
     let filter = NgramFilter::from_patterns(&[pattern1.as_slice(), pattern2.as_slice()]);
 
-    // File containing pattern1 — must NOT be rejected
+    // File containing pattern1, must NOT be rejected
     let file_with_pattern1 = NgramBloom::from_block(b"xxabcxx", 1024).unwrap();
     assert!(
         filter.matches_bloom(&file_with_pattern1),
         "CRITICAL: union_ngrams caused FNR for pattern1! Pattern 'abc' is in file 'xxabcxx' but was rejected"
     );
 
-    // File containing pattern2 — must NOT be rejected by union_ngrams
+    // File containing pattern2, must NOT be rejected by union_ngrams
     let file_with_pattern2 = NgramBloom::from_block(b"xxdefxx", 1024).unwrap();
     assert!(
         filter.matches_bloom(&file_with_pattern2),
         "CRITICAL: union_ngrams caused FNR for pattern2! Pattern 'def' is in file 'xxdefxx' but was rejected"
     );
 
-    // File containing BOTH patterns — must match
+    // File containing BOTH patterns, must match
     let file_with_both = NgramBloom::from_block(b"abcdef", 1024).unwrap();
     assert!(
         filter.matches_bloom(&file_with_both),
         "CRITICAL: Filter failed to match file with both patterns!"
     );
 
-    // File containing NEITHER pattern — should be rejected (no FNR risk)
+    // File containing NEITHER pattern, should be rejected (no FNR risk)
     let file_with_neither = NgramBloom::from_block(b"xyzwvu", 1024).unwrap();
     // Note: This might have false positives, but never false negatives
     let _result = filter.matches_bloom(&file_with_neither);
@@ -348,14 +348,14 @@ fn union_ngrams_rejection_is_mathematically_sound() {
     // Now verify bloom filter correctly rejects
     let any_present = disjoint_file.maybe_contains_any(&pattern_ngrams);
     if !any_present {
-        // File should be correctly rejected — verify matches_bloom returns false
+        // File should be correctly rejected, verify matches_bloom returns false
         let matches = filter.matches_bloom(&disjoint_file);
         assert!(
             !matches,
             "CRITICAL: File with no matching n-grams was accepted! This is a false positive, not FNR, but still bad."
         );
     }
-    // If any_present is true, the file might match (false positive) — this is acceptable
+    // If any_present is true, the file might match (false positive), this is acceptable
 }
 
 /// Stress test: union_ngrams with 100 patterns, verify no FNR
@@ -395,14 +395,14 @@ fn union_ngrams_with_exact_pairs_table() {
     let pattern2 = b"malware_signature_B";
     let filter = NgramFilter::from_patterns(&[pattern1.as_slice(), pattern2.as_slice()]);
 
-    // File with pattern1 — must match
+    // File with pattern1, must match
     let file1 = NgramBloom::from_block(pattern1, 8192).unwrap();
     assert!(
         filter.matches_bloom(&file1),
         "CRITICAL: union_ngrams + exact_pairs caused FNR for pattern1!"
     );
 
-    // File with pattern2 — must match
+    // File with pattern2, must match
     let file2 = NgramBloom::from_block(pattern2, 8192).unwrap();
     assert!(
         filter.matches_bloom(&file2),
@@ -540,7 +540,7 @@ fn pattern_spanning_three_blocks_never_skipped() {
     );
 }
 
-/// Verify the same for MmapBlockIndex — serialization must not lose the fix.
+/// Verify the same for MmapBlockIndex (serialization must not lose the fix).
 #[test]
 fn pattern_spanning_three_blocks_mmap_never_skipped() {
     use flashsieve::{

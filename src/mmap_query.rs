@@ -245,8 +245,13 @@ impl MmapBlockIndex<'_> {
     #[must_use]
     #[deprecated(since = "0.2.0", note = "use `try_histogram` instead to avoid panics")]
     pub fn histogram(&self, block_id: usize) -> ByteHistogramRef<'_> {
-        self.try_histogram(block_id).unwrap_or(ByteHistogramRef {
-            data: &[0; crate::index::SERIALIZED_HISTOGRAM_LEN],
+        // Fail closed on an out-of-range block_id instead of returning a dummy
+        // all-zero histogram (Law 10): a silent zero histogram reads downstream
+        // as "this block contains no bytes", masking the bug and losing recall.
+        // The deprecation note already advertises that this method panics; the
+        // fallible `try_histogram` is the non-panicking variant.
+        self.try_histogram(block_id).unwrap_or_else(|e| {
+            panic!("MmapBlockIndex::histogram({block_id}): {e}; use try_histogram for a fallible variant")
         })
     }
 
@@ -282,10 +287,13 @@ impl MmapBlockIndex<'_> {
     #[must_use]
     #[deprecated(since = "0.2.0", note = "use `try_bloom` instead to avoid panics")]
     pub fn bloom(&self, block_id: usize) -> NgramBloomRef<'_> {
-        self.try_bloom(block_id).unwrap_or(NgramBloomRef {
-            bloom_data: &[],
-            exact_pairs_data: None,
-            num_bits: 0,
+        // Fail closed on an out-of-range block_id instead of returning a dummy
+        // empty bloom (Law 10): an empty bloom answers "contains nothing" to
+        // every membership query, silently dropping recall for the block. The
+        // deprecation note advertises that this method panics; `try_bloom` is the
+        // fallible variant.
+        self.try_bloom(block_id).unwrap_or_else(|e| {
+            panic!("MmapBlockIndex::bloom({block_id}): {e}; use try_bloom for a fallible variant")
         })
     }
 

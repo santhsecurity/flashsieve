@@ -3,14 +3,14 @@
 use flashsieve::{BlockIndexBuilder, ByteFilter, NgramFilter};
 
 #[test]
-fn legendary_adversarial_empty_data() {
+fn depth_adversarial_empty_data() {
     let index = BlockIndexBuilder::new().block_size(256).build(&[]).unwrap();
     assert_eq!(index.block_count(), 0);
     assert_eq!(index.total_data_length(), 0);
 }
 
 #[test]
-fn legendary_adversarial_null_bytes() {
+fn depth_adversarial_null_bytes() {
     let data = vec![0x00; 1024];
     let index = BlockIndexBuilder::new()
         .block_size(256)
@@ -27,7 +27,7 @@ fn legendary_adversarial_null_bytes() {
 }
 
 #[test]
-fn legendary_adversarial_0xff_bytes() {
+fn depth_adversarial_0xff_bytes() {
     let data = vec![0xFF; 1024];
     let index = BlockIndexBuilder::new()
         .block_size(256)
@@ -42,7 +42,7 @@ fn legendary_adversarial_0xff_bytes() {
 }
 
 #[test]
-fn legendary_adversarial_invalid_block_size() {
+fn depth_adversarial_invalid_block_size() {
     let builder = BlockIndexBuilder::new().block_size(100); // not power of 2, and < 256
     let res = builder.build(&[0; 100]);
     assert!(res.is_err());
@@ -53,14 +53,14 @@ fn legendary_adversarial_invalid_block_size() {
 }
 
 #[test]
-fn legendary_adversarial_zero_bloom_bits() {
+fn depth_adversarial_zero_bloom_bits() {
     let builder = BlockIndexBuilder::new().block_size(256).bloom_bits(0);
     let res = builder.build(&[0; 256]);
     assert!(res.is_err());
 }
 
 #[test]
-fn legendary_adversarial_streaming_unaligned_chunks() {
+fn depth_adversarial_streaming_unaligned_chunks() {
     let builder = BlockIndexBuilder::new().block_size(256);
     let chunks = vec![vec![0; 256], vec![0; 128]];
     let res = builder.build_streaming(chunks.into_iter());
@@ -68,7 +68,7 @@ fn legendary_adversarial_streaming_unaligned_chunks() {
 }
 
 #[test]
-fn legendary_adversarial_huge_pattern() {
+fn depth_adversarial_huge_pattern() {
     let data = vec![0x41; 256];
     let index = BlockIndexBuilder::new()
         .block_size(256)
@@ -85,7 +85,7 @@ fn legendary_adversarial_huge_pattern() {
 }
 
 #[test]
-fn legendary_adversarial_repeated_ngrams() {
+fn depth_adversarial_repeated_ngrams() {
     let pattern = b"abababababababab";
     let filter = NgramFilter::from_patterns(&[pattern.as_slice()]);
 

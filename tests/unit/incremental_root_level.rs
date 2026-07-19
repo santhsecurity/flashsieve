@@ -71,11 +71,16 @@ fn merge_matches_full_rebuild() {
 
 #[test]
 fn remove_blocks_requeries_on_compacted_offsets() {
+    // Use BYTE-DISJOINT fills+markers per block. `candidate_blocks_byte` is a
+    // conservative prefilter: if an adjacent block shares any required byte it is
+    // included to avoid false negatives at block boundaries, and adjacent ranges
+    // are merged. Disjoint bytes keep block 1's match isolated so the compacted
+    // offset can be asserted exactly (no boundary widening into block 0).
     let blocks = vec![
-        patterned_block(b'a', b"keep-0"),
-        patterned_block(b'b', b"keep-1"),
-        patterned_block(b'c', b"drop-2"),
-        patterned_block(b'd', b"drop-3"),
+        patterned_block(0xA0, &[0xA1, 0xA2]),
+        patterned_block(0xB0, &[0xB1, 0xB2]),
+        patterned_block(0xC0, &[0xC1, 0xC2]),
+        patterned_block(0xD0, &[0xD1, 0xD2]),
     ];
 
     let mut index = build_index(&blocks).unwrap();
@@ -85,13 +90,15 @@ fn remove_blocks_requeries_on_compacted_offsets() {
     assert_eq!(index.block_count(), 2);
     assert_eq!(index.total_data_length(), BLOCK_SIZE * 2);
 
-    let keep_filter = ByteFilter::from_patterns(&[b"keep-1".as_slice()]);
+    // Query bytes unique to block 1 -> isolated match at the compacted offset.
+    let keep_filter = ByteFilter::from_patterns(&[[0xB1, 0xB2].as_slice()]);
     let keep_candidates = index.candidate_blocks_byte(&keep_filter);
     assert_eq!(keep_candidates.len(), 1);
     assert_eq!(keep_candidates[0].offset, BLOCK_SIZE);
     assert_eq!(keep_candidates[0].length, BLOCK_SIZE);
 
-    let dropped_filter = ByteFilter::from_patterns(&[b"drop-2".as_slice()]);
+    // Bytes unique to a removed block must no longer match anything.
+    let dropped_filter = ByteFilter::from_patterns(&[[0xC1, 0xC2].as_slice()]);
     assert!(index.candidate_blocks_byte(&dropped_filter).is_empty());
 }
 

@@ -172,7 +172,7 @@ fn maybe_contains_pattern_not_found() {
 #[test]
 fn maybe_contains_pattern_partial_match_rejected() {
     let bloom = NgramBloom::from_block(b"abcdef", 4096).unwrap();
-    // "az" — 'a' is present, but ngram 'az' was never inserted.
+    // "az": 'a' is present, but ngram 'az' was never inserted.
     assert!(!bloom.maybe_contains_pattern(b"az"));
 }
 
