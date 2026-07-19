@@ -126,6 +126,10 @@ impl ByteHistogram {
     /// let hist = ByteHistogram::from_raw_counts(counts);
     /// assert_eq!(hist.count(b'x'), 1);
     /// ```
+    // Public by-value API: callers already own a freshly built `[u32; 256]`
+    // (deserialize / convert). Changing to `&[u32; 256]` would break the
+    // published signature for a lint that only applies to private helpers.
+    #[allow(clippy::large_types_passed_by_value)]
     #[must_use]
     pub fn from_raw_counts(counts: [u32; 256]) -> Self {
         Self { counts }
@@ -150,7 +154,7 @@ impl ByteHistogram {
 
     /// Raw access to the 256-entry count array for bulk serialization.
     ///
-    /// Avoids 256 individual `count()` calls during index persistence 
+    /// Avoids 256 individual `count()` calls during index persistence
     /// the caller can write the entire array with a single `copy_from_slice`.
     ///
     /// # Example

@@ -242,8 +242,14 @@ impl MmapBlockIndex<'_> {
     }
 
     /// Get the byte histogram for a block. Deprecated; use `try_histogram` to avoid errors on out of bounds.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `block_id` is out of range. Prefer [`Self::try_histogram`] for a
+    /// fallible variant that returns [`Error::InvalidBlockId`] instead.
     #[must_use]
     #[deprecated(since = "0.2.0", note = "use `try_histogram` instead to avoid panics")]
+    #[allow(clippy::panic)] // intentional fail-closed for deprecated infallible API; use try_histogram
     pub fn histogram(&self, block_id: usize) -> ByteHistogramRef<'_> {
         // Fail closed on an out-of-range block_id instead of returning a dummy
         // all-zero histogram (Law 10): a silent zero histogram reads downstream
@@ -284,8 +290,14 @@ impl MmapBlockIndex<'_> {
     }
 
     /// Get the bloom filter for a block. Deprecated; use `try_bloom` to avoid errors on out of bounds.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `block_id` is out of range. Prefer [`Self::try_bloom`] for a
+    /// fallible variant that returns [`Error::InvalidBlockId`] instead.
     #[must_use]
     #[deprecated(since = "0.2.0", note = "use `try_bloom` instead to avoid panics")]
+    #[allow(clippy::panic)] // intentional fail-closed for deprecated infallible API; use try_bloom
     pub fn bloom(&self, block_id: usize) -> NgramBloomRef<'_> {
         // Fail closed on an out-of-range block_id instead of returning a dummy
         // empty bloom (Law 10): an empty bloom answers "contains nothing" to

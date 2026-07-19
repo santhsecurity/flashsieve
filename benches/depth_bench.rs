@@ -33,7 +33,7 @@ fn random_data(len: usize, seed: u64) -> Vec<u8> {
 /// Generate random n-grams
 fn random_ngrams(count: usize, seed: u64) -> Vec<(u8, u8)> {
     let mut rng = StdRng::seed_from_u64(seed);
-    (0..count).map(|_| (rng.gen(), rng.gen())).collect()
+    (0..count).map(|_| (rng.random(), rng.random())).collect()
 }
 
 // ============================================================================

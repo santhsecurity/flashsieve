@@ -430,14 +430,22 @@ pub(crate) fn parse_serialized_index_header(
         // V4: 2-byte tagged encoding.
         let present = data[offset];
         let value = data[offset + 1];
-        if present == 0 { None } else { Some(value) }
+        if present == 0 {
+            None
+        } else {
+            Some(value)
+        }
     } else if version >= 3 {
         // V3: lossy 1-byte encoding (0xFF aliases Some(0xFF) with None).
         // Preserve the original (lossy) behavior so existing v3 data
         // continues to read; data written with v3 cannot recover
         // `Some(0xFF)` because that information was never persisted.
         let byte = data[offset];
-        if byte == 0xFF { None } else { Some(byte) }
+        if byte == 0xFF {
+            None
+        } else {
+            Some(byte)
+        }
     } else {
         None
     };

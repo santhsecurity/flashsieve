@@ -2,17 +2,11 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-use flashsieve::{
-    BlockIndexBuilder, BlockedNgramBloom, ByteFilter, ByteHistogram, NgramBloom, NgramFilter,
-};
+use flashsieve::{BlockIndexBuilder, BlockedNgramBloom, ByteFilter, NgramBloom, NgramFilter};
 use proptest::prelude::*;
 
 fn bloom_size() -> impl Strategy<Value = usize> {
     prop_oneof![Just(64usize), 128usize..=1024, 1024usize..=4096]
-}
-
-fn ngram() -> impl Strategy<Value = (u8, u8)> {
-    any::<(u8, u8)>()
 }
 
 macro_rules! flash_cases {
@@ -123,4 +117,3 @@ flash_cases! {
         let _ = NgramBloom::new(size);
     },
 }
-

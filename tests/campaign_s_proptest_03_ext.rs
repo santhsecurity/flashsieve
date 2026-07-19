@@ -11,10 +11,6 @@ fn bloom_size() -> impl Strategy<Value = usize> {
     prop_oneof![Just(64usize), 128usize..=1024, 1024usize..=4096]
 }
 
-fn ngram_strategy() -> impl Strategy<Value = (u8, u8)> {
-    any::<(u8, u8)>()
-}
-
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(64))]
 
@@ -187,7 +183,7 @@ proptest! {
 
     #[test]
     fn p27_many_small_patterns(block in prop::collection::vec(any::<u8>(), 8..64)) {
-        let patterns: Vec<&[u8]> = block.windows(2).map(|w| &w[..]).collect();
+        let patterns: Vec<&[u8]> = block.windows(2).collect();
         if !patterns.is_empty() {
             let _ = NgramFilter::from_patterns(&patterns);
         }

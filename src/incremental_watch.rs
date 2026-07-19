@@ -289,7 +289,10 @@ mod tests {
         let err = watcher.index_changes(&changes).unwrap_err();
         match err {
             crate::error::Error::Io { path, .. } => {
-                assert!(path.contains("does_not_exist.bin"), "wrong path in error: {path}");
+                assert!(
+                    path.contains("does_not_exist.bin"),
+                    "wrong path in error: {path}"
+                );
             }
             other => panic!("expected Error::Io, got {other:?}"),
         }

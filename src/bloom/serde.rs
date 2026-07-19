@@ -139,8 +139,8 @@ mod truncation_tests {
 
     #[test]
     fn from_serialized_parts_truncates_surplus_words() {
-        let bloom = NgramBloom::from_serialized_parts(128, vec![0u64; 9], None)
-            .expect("valid parts");
+        let bloom =
+            NgramBloom::from_serialized_parts(128, vec![0u64; 9], None).expect("valid parts");
         // 128 bits -> 2 words required; the 9-word input must be trimmed to 2.
         assert_eq!(bloom.bits.len(), 2, "surplus words must be truncated");
     }

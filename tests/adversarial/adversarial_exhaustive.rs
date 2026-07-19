@@ -311,7 +311,9 @@ fn ngram_filter_zero_false_negatives_invariant() {
 
     for _ in 0..100 {
         // Generate random data
-        let data: Vec<u8> = (0..rng.random_range(10..1000)).map(|_| rng.random()).collect();
+        let data: Vec<u8> = (0..rng.random_range(10..1000))
+            .map(|_| rng.random())
+            .collect();
         let bloom = NgramBloom::from_block(&data, 32768).expect("expected");
 
         // Every n-gram in the data MUST be detected
