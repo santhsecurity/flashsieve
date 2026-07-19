@@ -228,7 +228,7 @@ fn walk_dir_inner(dir: &Path, max_size: u64, out: &mut Vec<PathBuf>) -> std::io:
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(miri)))]
 #[allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 mod tests {
     use super::*;

@@ -318,7 +318,7 @@ mod tests {
 
         #[allow(clippy::unwrap_used)]
         let histogram = mmap_index.try_histogram(0).unwrap();
-        for byte in [b'a', b's', b't', b'z', b'!'] {
+        for byte in *b"astz!" {
             assert_eq!(
                 histogram.count(byte),
                 heap_index.histograms[0].count(byte),
