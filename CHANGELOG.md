@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-08-07
+
+### Added
+- Added `candidate_blocks_byte` and `candidate_blocks_ngram` to `MmapBlockIndex` for full candidate query API parity across index types (`BlockIndex`, `FileBloomIndex`, `MmapBlockIndex`).
+
+### Audited
+- Audited sieve/index paths for silent-fallback/fail-closed behavior and confirmed zero false negative guarantees.
+
 ## [0.1.2] - 2026-08-07
 
 ### Added

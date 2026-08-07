@@ -77,3 +77,24 @@ fn deprecated_accessors_return_real_data_for_a_valid_block() {
     let bloom = mmap.bloom(0);
     assert!(bloom.maybe_contains_bloom(b'a', b'b'));
 }
+#[test]
+fn test_mmap_index_candidate_blocks_byte_and_ngram() {
+    use flashsieve::{ByteFilter, NgramFilter};
+
+    let index = BlockIndexBuilder::new()
+        .block_size(256)
+        .bloom_bits(1024)
+        .build(b"secret token")
+        .unwrap();
+    let serialized: &'static [u8] = Box::leak(index.to_bytes().into_boxed_slice());
+    let mmap = MmapBlockIndex::from_slice(serialized).unwrap();
+
+    let byte_filter = ByteFilter::from_patterns(&[b"secret".as_slice()]);
+    let ngram_filter = NgramFilter::from_patterns(&[b"secret".as_slice()]);
+
+    let byte_candidates = mmap.candidate_blocks_byte(&byte_filter);
+    let ngram_candidates = mmap.candidate_blocks_ngram(&ngram_filter);
+
+    assert_eq!(byte_candidates.len(), 1);
+    assert_eq!(ngram_candidates.len(), 1);
+}

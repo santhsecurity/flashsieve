@@ -7,6 +7,147 @@ use crate::mmap_index::MmapBlockIndex;
 use crate::mmap_write::{ByteHistogramRef, NgramBloomRef};
 
 impl MmapBlockIndex<'_> {
+    /// Query using byte-level filtering on serialized bytes.
+    ///
+    /// Returns one range per indexed block that satisfies the byte filter.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use flashsieve::{BlockIndexBuilder, ByteFilter, MmapBlockIndex};
+    ///
+    /// let bytes = BlockIndexBuilder::new().block_size(256).build(b"secret").unwrap().to_bytes();
+    /// let mmap = MmapBlockIndex::from_slice(&bytes).unwrap();
+    /// let filter = ByteFilter::from_patterns(&[b"secret".as_slice()]);
+    /// let candidates = mmap.candidate_blocks_byte(&filter);
+    /// assert!(!candidates.is_empty());
+    /// ```
+    #[must_use]
+    pub fn candidate_blocks_byte(&self, filter: &ByteFilter) -> Vec<CandidateRange> {
+        let block_count = self.block_metas.len();
+        if block_count == 0 {
+            return Vec::new();
+        }
+        let mut seen = vec![false; block_count];
+        for index in 0..block_count {
+            let h = self.block_histogram(self.block_metas[index].offset);
+            if byte_filter_matches_histogram(filter, h) {
+                seen[index] = true;
+                continue;
+            }
+            if index > 0 {
+                let prev_h = self.block_histogram(self.block_metas[index - 1].offset);
+                if byte_filter_matches_histogram_pair(filter, prev_h, h) {
+                    seen[index - 1] = true;
+                    seen[index] = true;
+                }
+            }
+        }
+        for index in 1..block_count {
+            if seen[index] && !seen[index - 1] {
+                let prev_h = self.block_histogram(self.block_metas[index - 1].offset);
+                if filter.has_any_required_byte(prev_h) {
+                    seen[index - 1] = true;
+                }
+            }
+        }
+
+        let mut results = Vec::new();
+        for (index, is_seen) in seen.into_iter().enumerate() {
+            if is_seen {
+                if let Some(c) = self.candidate_for_index(index) {
+                    results.push(c);
+                }
+            }
+        }
+        crate::BlockIndex::merge_adjacent(&results)
+    }
+
+    /// Query using n-gram filtering on serialized bytes.
+    ///
+    /// Returns one range per indexed block that satisfies the n-gram filter.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use flashsieve::{BlockIndexBuilder, MmapBlockIndex, NgramFilter};
+    ///
+    /// let bytes = BlockIndexBuilder::new().block_size(256).build(b"secret").unwrap().to_bytes();
+    /// let mmap = MmapBlockIndex::from_slice(&bytes).unwrap();
+    /// let filter = NgramFilter::from_patterns(&[b"secret".as_slice()]);
+    /// let candidates = mmap.candidate_blocks_ngram(&filter);
+    /// assert!(!candidates.is_empty());
+    /// ```
+    #[must_use]
+    pub fn candidate_blocks_ngram(&self, filter: &NgramFilter) -> Vec<CandidateRange> {
+        let block_count = self.block_metas.len();
+        if block_count == 0 {
+            return Vec::new();
+        }
+
+        let window_blocks = filter
+            .max_pattern_bytes()
+            .div_ceil(self.block_size)
+            .max(1)
+            .saturating_add(1)
+            .min(block_count);
+        let mut seen = vec![false; block_count];
+
+        for index in 0..block_count {
+            let bloom = self.block_bloom(self.block_metas[index]);
+            if ngram_filter_matches_bloom(filter, bloom) {
+                seen[index] = true;
+                continue;
+            }
+
+            if index == 0 {
+                continue;
+            }
+
+            let prev_bloom = self.block_bloom(self.block_metas[index - 1]);
+            if ngram_filter_matches_bloom_pair(filter, prev_bloom, bloom) {
+                seen[index - 1] = true;
+                seen[index] = true;
+                continue;
+            }
+
+            let earliest_start = index.saturating_sub(window_blocks - 1);
+            for window_start in earliest_start..index.saturating_sub(1) {
+                let end = index + 1;
+                let b_refs: Vec<_> = (window_start..end)
+                    .map(|i| self.block_bloom(self.block_metas[i]))
+                    .collect();
+                if ngram_filter_matches_bloom_multi(filter, &b_refs) {
+                    for item in seen.iter_mut().take(end).skip(window_start) {
+                        *item = true;
+                    }
+                    break;
+                }
+            }
+        }
+
+        let union = filter.union_ngrams();
+        if !union.is_empty() {
+            for index in 1..block_count {
+                if seen[index] && !seen[index - 1] {
+                    let prev_bloom = self.block_bloom(self.block_metas[index - 1]);
+                    if prev_bloom.maybe_contains_any(union) {
+                        seen[index - 1] = true;
+                    }
+                }
+            }
+        }
+
+        let mut results = Vec::new();
+        for (index, is_seen) in seen.into_iter().enumerate() {
+            if is_seen {
+                if let Some(c) = self.candidate_for_index(index) {
+                    results.push(c);
+                }
+            }
+        }
+        crate::BlockIndex::merge_adjacent(&results)
+    }
     /// Query candidate blocks directly from the serialized histograms/blooms.
     ///
     /// # Example
