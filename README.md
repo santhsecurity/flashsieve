@@ -4,7 +4,7 @@
 [![docs.rs](https://docs.rs/flashsieve/badge.svg)](https://docs.rs/flashsieve)
 [![license](https://img.shields.io/crates/l/flashsieve.svg)](LICENSE)
 
-Part of [Santh](https://santh.dev) - open source Rust security and infrastructure tooling. Follow [@SanthProject](https://x.com/SanthProject) on X.
+Part of [Santh](https://santh.dev) - open source Rust security and infrastructure tooling.
 
 **Storage-level pre-filtering for pattern matching.**
 

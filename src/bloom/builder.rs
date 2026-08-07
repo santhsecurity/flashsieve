@@ -1,7 +1,7 @@
 use crate::bloom::filter::{
-    BlockedNgramBloom, NgramBloom, EXACT_PAIR_THRESHOLD_BITS, EXACT_PAIR_WORDS,
+    BlockedNgramBloom, NgramBloom, EXACT_PAIR_THRESHOLD_BITS, EXACT_PAIR_WORDS, NUM_HASHES,
 };
-use crate::bloom::hash::{hash_pair, hash_to_index, wyhash_pair};
+use crate::bloom::hash::{blocked_probe_bits, flat_probe_bit, hash_pair, hash_to_index, wyhash_pair};
 use crate::error::{Error, Result};
 
 /// Maximum bloom filter bit count to prevent unbounded allocations (128 Mbits = 16 MiB).
@@ -172,10 +172,11 @@ impl NgramBloom {
         let (h1, h2) = hash_pair(a, b);
         let mask = self.bit_index_mask;
 
+        const _: () = assert!(NUM_HASHES == 3, "NgramBloom unroll assumes NUM_HASHES == 3");
         // Unrolled k=3 insertions (matches maybe_contains unroll).
-        let idx0 = (h1 & mask) as usize;
-        let idx1 = (h1.wrapping_add(h2) & mask) as usize;
-        let idx2 = (h1.wrapping_add(h2.wrapping_mul(2)) & mask) as usize;
+        let idx0 = flat_probe_bit(h1, h2, 0, mask);
+        let idx1 = flat_probe_bit(h1, h2, 1, mask);
+        let idx2 = flat_probe_bit(h1, h2, 2, mask);
         self.bits[idx0 >> 6] |= 1_u64 << (idx0 & 63);
         self.bits[idx1 >> 6] |= 1_u64 << (idx1 & 63);
         self.bits[idx2 >> 6] |= 1_u64 << (idx2 & 63);
@@ -302,13 +303,7 @@ impl BlockedNgramBloom {
         let block_index = hash_to_index(wyhash_pair(a, b), self.num_blocks);
         let block = &mut self.blocks[block_index];
         let (h1, h2) = hash_pair(a, b);
-        for probe in 0..3u64 {
-            let bit_index = h1
-                .wrapping_add(h2.wrapping_mul(probe))
-                .wrapping_add(probe.wrapping_mul(0x9E37_79B9_7F4A_7C15))
-                & 511;
-            let word_index = (bit_index >> 6) as usize;
-            let bit_offset = (bit_index & 63) as u32;
+        for (word_index, bit_offset) in blocked_probe_bits(h1, h2) {
             block[word_index] |= 1_u64 << bit_offset;
         }
     }

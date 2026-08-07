@@ -1,5 +1,7 @@
 use crate::bloom::filter::{BlockedNgramBloom, NgramBloom, EXACT_PAIR_WORDS, NUM_HASHES};
-use crate::bloom::hash::{hash_pair, hash_to_index, wyhash_pair};
+use crate::bloom::hash::{
+    blocked_probe_bits, flat_probe_bit, hash_pair, hash_to_index, wyhash_pair,
+};
 
 impl NgramBloom {
     /// Check if a 2-byte n-gram might be present.
@@ -73,13 +75,11 @@ impl NgramBloom {
     pub fn maybe_contains_bloom(&self, a: u8, b: u8) -> bool {
         let (h1, h2) = hash_pair(a, b);
 
-        // Unroll k=3 hash probes to avoid loop overhead.
-        // The compiler can't prove NUM_HASHES is constant
-        // (it's a runtime struct field), so it generates a loop.
+        const _: () = assert!(NUM_HASHES == 3, "NgramBloom unroll assumes NUM_HASHES == 3");
         let mask = self.bit_index_mask;
-        let idx0 = (h1 & mask) as usize;
-        let idx1 = (h1.wrapping_add(h2) & mask) as usize;
-        let idx2 = (h1.wrapping_add(h2.wrapping_mul(2)) & mask) as usize;
+        let idx0 = flat_probe_bit(h1, h2, 0, mask);
+        let idx1 = flat_probe_bit(h1, h2, 1, mask);
+        let idx2 = flat_probe_bit(h1, h2, 2, mask);
         self.word_contains(idx0) && self.word_contains(idx1) && self.word_contains(idx2)
     }
 
@@ -248,13 +248,7 @@ impl BlockedNgramBloom {
 
         // Prefetch removed to keep the crate fully safe.
 
-        (0..3u64).all(|probe| {
-            let bit_index = h1
-                .wrapping_add(h2.wrapping_mul(probe))
-                .wrapping_add(probe.wrapping_mul(0x9E37_79B9_7F4A_7C15))
-                & 511;
-            let word_index = (bit_index >> 6) as usize;
-            let bit_offset = (bit_index & 63) as u32;
+        blocked_probe_bits(h1, h2).all(|(word_index, bit_offset)| {
             (block[word_index] & (1_u64 << bit_offset)) != 0
         })
     }
@@ -290,13 +284,7 @@ impl BlockedNgramBloom {
 
             let block = &self.blocks[block_index];
             let (h1, h2) = hash_pair(a, b);
-            (0..3u64).all(|probe| {
-                let bit_index = h1
-                    .wrapping_add(h2.wrapping_mul(probe))
-                    .wrapping_add(probe.wrapping_mul(0x9E37_79B9_7F4A_7C15))
-                    & 511;
-                let word_index = (bit_index >> 6) as usize;
-                let bit_offset = (bit_index & 63) as u32;
+            blocked_probe_bits(h1, h2).all(|(word_index, bit_offset)| {
                 (block[word_index] & (1_u64 << bit_offset)) != 0
             })
         })
@@ -520,5 +508,42 @@ mod tests {
         // Verify size is approx half
         let standard = NgramBloom::from_block(data, block_size).unwrap();
         assert!(compact.bits.len() <= standard.bits.len() / 2 + 1);
+    }
+    #[test]
+    fn blocked_bloom_differential_query_matches_batch_and_flat() {
+        let mut rng = StdRng::seed_from_u64(0xD1FF_E2E1);
+        for size in [512usize, 1024, 4096, 65536] {
+            let mut blocked = BlockedNgramBloom::new(size).unwrap();
+            let mut flat = NgramBloom::new(size).unwrap();
+
+            let mut inserted = Vec::new();
+            for _ in 0..100 {
+                let pair = (rng.random::<u8>(), rng.random::<u8>());
+                inserted.push(pair);
+                blocked.insert(pair.0, pair.1);
+                flat.insert_ngram(pair.0, pair.1);
+            }
+
+            for &(a, b) in &inserted {
+                let single = blocked.maybe_contains(a, b);
+                let batch = blocked.maybe_contains_all(&[(a, b)]);
+                assert_eq!(single, batch, "maybe_contains != maybe_contains_all for ({a}, {b})");
+                if size >= 4096 {
+                    let flat_val = flat.maybe_contains(a, b);
+                    assert_eq!(single, flat_val, "exact mode mismatch for ({a}, {b})");
+                }
+            }
+
+            for _ in 0..100 {
+                let pair = (rng.random::<u8>(), rng.random::<u8>());
+                let single = blocked.maybe_contains(pair.0, pair.1);
+                let batch = blocked.maybe_contains_all(&[pair]);
+                assert_eq!(single, batch, "maybe_contains != maybe_contains_all for random pair");
+                if size >= 4096 {
+                    let flat_val = flat.maybe_contains(pair.0, pair.1);
+                    assert_eq!(single, flat_val, "exact mode mismatch for random pair");
+                }
+            }
+        }
     }
 }

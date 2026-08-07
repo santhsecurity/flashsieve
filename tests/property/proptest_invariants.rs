@@ -18,7 +18,8 @@
 //! and indexing logic across a wide range of random inputs.
 
 use flashsieve::{
-    BlockIndex, BlockIndexBuilder, ByteFilter, ByteHistogram, NgramBloom, NgramFilter,
+    BlockIndex, BlockIndexBuilder, BlockedNgramBloom, ByteFilter, ByteHistogram, NgramBloom,
+    NgramFilter,
 };
 use proptest::prelude::*;
 use rand::{Rng, SeedableRng};
@@ -262,6 +263,50 @@ proptest! {
             full_candidates,
             incremental_candidates,
             "Incremental index produced different candidate blocks"
+        );
+    }
+    /// 8. Differential test: BlockedNgramBloom point query == batch query == flat NgramBloom in exact-pairs mode.
+    #[test]
+    fn blocked_bloom_differential_query_and_flat_equivalence(
+        inserted_pairs in prop::collection::vec(any::<(u8, u8)>(), 0..=100),
+        test_pairs in prop::collection::vec(any::<(u8, u8)>(), 1..=30),
+        size in prop_oneof![Just(512usize), Just(1024), Just(4096), Just(65536)],
+    ) {
+        let mut blocked = BlockedNgramBloom::new(size).unwrap();
+        let mut flat = NgramBloom::new(size).unwrap();
+
+        for &(a, b) in &inserted_pairs {
+            blocked.insert(a, b);
+            flat.insert_ngram(a, b);
+        }
+
+        for &(a, b) in &test_pairs {
+            let single = blocked.maybe_contains(a, b);
+            let batch = blocked.maybe_contains_all(&[(a, b)]);
+            prop_assert_eq!(
+                single,
+                batch,
+                "BlockedNgramBloom maybe_contains({}, {}) != maybe_contains_all(&[({}, {})])",
+                a, b, a, b
+            );
+
+            if size >= 4096 {
+                let flat_res = flat.maybe_contains(a, b);
+                prop_assert_eq!(
+                    single,
+                    flat_res,
+                    "Exact-pairs mode mismatch between BlockedNgramBloom and NgramBloom for ({}, {})",
+                    a, b
+                );
+            }
+        }
+
+        let all_single = test_pairs.iter().all(|&(a, b)| blocked.maybe_contains(a, b));
+        let all_batch = blocked.maybe_contains_all(&test_pairs);
+        prop_assert_eq!(
+            all_single,
+            all_batch,
+            "BlockedNgramBloom multi-pair maybe_contains_all disagree with itemwise maybe_contains"
         );
     }
 }

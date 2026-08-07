@@ -1,17 +1,17 @@
 [package]
 name = "flashsieve"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
 description = "Storage-level pre-filtering for pattern matching, skip blocks that can't contain matches"
-keywords = ["filter", "bloom", "storage", "pattern-matching", "indexing"]
+keywords = ["bloom-filter", "pattern-matching", "prefilter", "storage", "indexing"]
 categories = ["algorithms", "data-structures"]
 repository = "https://github.com/santhreal/flashsieve"
 homepage = "https://santh.dev"
 documentation = "https://docs.rs/flashsieve"
 readme = "README.md"
-authors = ["Corum Collective LLC <contact@santh.io>"]
+authors = ["Santh <64453045+santhreal@users.noreply.github.com>"]
 include = [
     "src/**/*.rs",
     "tests/**/*.rs",
@@ -21,6 +21,9 @@ include = [
     "LICENSE",
     "CHANGELOG.md",
 ]
+
+[package.metadata.santh]
+status = "stable"
 
 [package.metadata.docs.rs]
 all-features = true

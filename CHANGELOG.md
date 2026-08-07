@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.2] - 2026-08-07
 
 ### Added
+- Added `package.metadata.santh.status = "stable"` tag to `Cargo.toml`.
+- Added differential tests (`blocked_bloom_differential_query_matches_batch_and_flat` and `blocked_bloom_differential_query_and_flat_equivalence`) asserting equality between `maybe_contains` point queries, `maybe_contains_all` batch queries, and `NgramBloom` exact-pairs membership.
 
 - Comprehensive documentation for all public items with examples
 - Module-level documentation for every source file
@@ -23,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fuzz targets for deserialization and insert/query operations
 
 ### Changed
+- Unified blocked bloom filter probe derivation into ONE-PLACE `blocked_probe_bits` / `blocked_probe_bit` shared by `BlockedNgramBloom::insert`, `maybe_contains`, and `maybe_contains_all`.
+- Unified flat bloom filter probe calculation into `flat_probe_bit` and tied unrolled probe counts directly to `NUM_HASHES` via compile assertions.
+- Updated `Cargo.toml` author metadata to `Santh <64453045+santhreal@users.noreply.github.com>`.
 
 - Enhanced error messages with actionable guidance
 - README.md with FPR calculator example and serialization format
@@ -43,5 +48,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic unit tests for all modules
 - Criterion benchmarks for core operations
 
-[Unreleased]: https://github.com/santhsecurity/flashsieve/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/santhsecurity/flashsieve/releases/tag/v0.1.0
+[Unreleased]: https://github.com/santhreal/flashsieve/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/santhreal/flashsieve/releases/tag/v0.1.0

@@ -80,6 +80,28 @@ pub(crate) fn hash_to_index(hash: u64, num_bits: usize) -> usize {
         (hash % num_bits_u64) as usize
     }
 }
+/// Compute the `(word_index, bit_offset)` in a 512-bit block for a blocked bloom probe.
+#[inline(always)]
+pub(crate) fn blocked_probe_bit(h1: u64, h2: u64, probe: u64) -> (usize, u32) {
+    let bit_index = h1
+        .wrapping_add(h2.wrapping_mul(probe))
+        .wrapping_add(probe.wrapping_mul(0x9E37_79B9_7F4A_7C15))
+        & 511;
+    ((bit_index >> 6) as usize, (bit_index & 63) as u32)
+}
+
+/// Iterator over probe `(word_index, bit_offset)` pairs for a blocked bloom filter.
+/// Probe count is derived directly from [`crate::bloom::filter::NUM_HASHES`].
+#[inline(always)]
+pub(crate) fn blocked_probe_bits(h1: u64, h2: u64) -> impl Iterator<Item = (usize, u32)> {
+    (0..u64::from(crate::bloom::filter::NUM_HASHES)).map(move |probe| blocked_probe_bit(h1, h2, probe))
+}
+
+/// Compute the bit index in a flat bloom filter for a probe and mask.
+#[inline(always)]
+pub(crate) fn flat_probe_bit(h1: u64, h2: u64, probe: u64, mask: u64) -> usize {
+    (h1.wrapping_add(h2.wrapping_mul(probe)) & mask) as usize
+}
 
 #[cfg(test)]
 #[allow(

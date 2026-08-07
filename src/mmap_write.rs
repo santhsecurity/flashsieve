@@ -4,7 +4,8 @@
 //! zero-copy wrappers over the histogram and bloom regions of a
 //! serialized index.
 
-use crate::bloom::hash::hash_pair;
+use crate::bloom::filter::NUM_HASHES;
+use crate::bloom::hash::{flat_probe_bit, hash_pair};
 
 #[cfg(test)]
 use crate::histogram::ByteHistogram;
@@ -145,9 +146,10 @@ impl NgramBloomRef<'_> {
         }
         let (h1, h2) = hash_pair(first, second);
         let mask = (self.num_bits as u64).wrapping_sub(1);
-        let idx0 = (h1 & mask) as usize;
-        let idx1 = (h1.wrapping_add(h2) & mask) as usize;
-        let idx2 = (h1.wrapping_add(h2.wrapping_mul(2)) & mask) as usize;
+        const _: () = assert!(NUM_HASHES == 3, "NgramBloomRef unroll assumes NUM_HASHES == 3");
+        let idx0 = flat_probe_bit(h1, h2, 0, mask);
+        let idx1 = flat_probe_bit(h1, h2, 1, mask);
+        let idx2 = flat_probe_bit(h1, h2, 2, mask);
         self.bit_is_set(idx0) && self.bit_is_set(idx1) && self.bit_is_set(idx2)
     }
 
